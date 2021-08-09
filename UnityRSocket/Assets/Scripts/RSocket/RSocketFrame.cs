@@ -1,8 +1,6 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Text;
-using UnityEngine;
 
 namespace RSocket
 {
@@ -28,7 +26,7 @@ namespace RSocket
             {
                 byte[] streamAsBytes = BitConverter.GetBytes(StreamId);
 
-                WriteBytes(bytes, streamAsBytes);
+                WriteIntBigEndian(bytes, streamAsBytes);
             }
 
             protected void WriteTypeAndFlags(List<byte> bytes)
@@ -38,10 +36,10 @@ namespace RSocket
                 ushort typeAndFlags = (ushort) (type | flags);
                 byte[] typeAndFlagsBytes = BitConverter.GetBytes(typeAndFlags);
 
-                WriteBytes(bytes, typeAndFlagsBytes);
+                WriteIntBigEndian(bytes, typeAndFlagsBytes);
             }
 
-            protected static void WriteBytes(List<byte> target, byte[] bytes)
+            protected static void WriteIntBigEndian(List<byte> target, byte[] bytes)
             {
                 if (BitConverter.IsLittleEndian)
                 {
@@ -67,19 +65,44 @@ namespace RSocket
             {
                 List<byte> bytes = new List<byte>();
 
-                // Header
                 WriteCommonHeader(bytes);
                 WriteHeader(bytes);
+                WritePayload(bytes);
 
                 return bytes;
             }
 
+            private void WritePayload(List<byte> bytes)
+            {
+                // Check if Metadata flag is set
+                if ((Flags & (int) RSocketFlagType.METADATA) == (int) RSocketFlagType.METADATA)
+                {
+                    // Write metadata with length prefix if we have metadata
+                    if (Metadata != null)
+                    {
+                        UInt24 metaDataLength = new UInt24((uint) Metadata.Count);
+                        bytes.AddRange(metaDataLength.BytesBigEndian);
+                        bytes.AddRange(Metadata);
+                    }
+                    else
+                    {
+                        // Write zero length if we set flag but didn't provide data
+                        bytes.Add(0);
+                    }
+                }
+
+                if (Data == null) return;
+
+                // Remainder of the frame is assumed to be data, no need to length prefix
+                bytes.AddRange(Data);
+            }
+
             private void WriteHeader(List<byte> bytes)
             {
-                WriteBytes(bytes, BitConverter.GetBytes(MajorVersion));
-                WriteBytes(bytes, BitConverter.GetBytes(MinorVersion));
-                WriteBytes(bytes, BitConverter.GetBytes(KeepAlive));
-                WriteBytes(bytes, BitConverter.GetBytes(LifeTime));
+                WriteIntBigEndian(bytes, BitConverter.GetBytes(MajorVersion));
+                WriteIntBigEndian(bytes, BitConverter.GetBytes(MinorVersion));
+                WriteIntBigEndian(bytes, BitConverter.GetBytes(KeepAlive));
+                WriteIntBigEndian(bytes, BitConverter.GetBytes(LifeTime));
 
                 // TODO: handle resume token
                 // - (16 bits = max value 65,535) Unsigned 16-bit integer of Resume Identification Token Length in bytes. (Not present if R flag is not set)
@@ -118,10 +141,9 @@ namespace RSocket
                 WriteTypeAndFlags(bytes);
             }
 
-
             public SetupFrame Deserialize(byte[] bytes)
             {
-                throw new System.NotImplementedException();
+                throw new NotImplementedException();
             }
 
             public List<byte> SerializeLengthPrefixed()

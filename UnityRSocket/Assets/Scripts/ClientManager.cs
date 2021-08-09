@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+using System.Text;
 using RSocket;
 using UnityEngine;
 
@@ -24,10 +26,22 @@ public class ClientManager : MonoBehaviour
 
     private void Start()
     {
-        var connector = new RSocketConnector(new TcpClientTransport(host, port));
-        connector.Bind((IRSocket rsocket) =>
+        IClientTransport transport = new TcpClientTransport(host, port);
+        SetupOptions setupOptions = new SetupOptions(
+            keepAlive: 60000,
+            lifetime: 300000,
+            data: new List<byte>(Encoding.ASCII.GetBytes("This could be anything")),
+            metadata: new List<byte>(Encoding.ASCII.GetBytes("This could also be anything")));
+        RSocketConnector connector = new RSocketConnector(transport, setupOptions);
+
+        connector.Bind((rsocket) =>
         {
-            
+            Debug.Log("RSocket requester bound");
+
+            // rsocket.FireAndForget(new RSocketPayload()
+            // {
+            //     Data = new List<byte>(Encoding.ASCII.GetBytes("Hello World"))
+            // }, null);
         });
     }
 }

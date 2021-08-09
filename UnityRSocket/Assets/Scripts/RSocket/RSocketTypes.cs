@@ -7,7 +7,7 @@ namespace RSocket
     {
         public List<byte> Data { get; }
 
-        public List<byte> MetaData { get; }
+        public List<byte> Metadata { get; }
     }
 
     public interface ICancellable
