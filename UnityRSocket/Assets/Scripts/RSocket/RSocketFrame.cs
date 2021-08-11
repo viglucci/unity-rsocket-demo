@@ -21,33 +21,6 @@ namespace RSocket
             public RSocketFrameType Type;
             public int StreamId;
             public ushort Flags;
-
-            protected void WriteStreamId(List<byte> bytes)
-            {
-                byte[] streamAsBytes = BitConverter.GetBytes(StreamId);
-
-                WriteIntBigEndian(bytes, streamAsBytes);
-            }
-
-            protected void WriteTypeAndFlags(List<byte> bytes)
-            {
-                int type = (int) Type << FrameTypeOffset;
-                int flags = Flags & FlagsMask;
-                ushort typeAndFlags = (ushort) (type | flags);
-                byte[] typeAndFlagsBytes = BitConverter.GetBytes(typeAndFlags);
-
-                WriteIntBigEndian(bytes, typeAndFlagsBytes);
-            }
-
-            protected static void WriteIntBigEndian(List<byte> target, byte[] bytes)
-            {
-                if (BitConverter.IsLittleEndian)
-                {
-                    Array.Reverse(bytes);
-                }
-
-                target.AddRange(bytes);
-            }
         }
 
         public class SetupFrame : Frame, ISerializable<SetupFrame>
@@ -65,8 +38,49 @@ namespace RSocket
             {
                 List<byte> bytes = new List<byte>();
 
-                WriteCommonHeader(bytes);
-                WriteHeader(bytes);
+                // Stream ID
+                BufferUtils.WriteUInt32BigEndian(bytes, StreamId);
+                
+                // Type and Flags
+                int type = (int) Type << FrameTypeOffset;
+                int flags = Flags & FlagsMask;
+                Int16 typeAndFlags = (Int16) (type | flags);
+                BufferUtils.WriteUInt16BigEndian(bytes, typeAndFlags);
+
+                BufferUtils.WriteUInt16BigEndian(bytes, MajorVersion);
+                BufferUtils.WriteUInt16BigEndian(bytes, MinorVersion);
+                BufferUtils.WriteUInt32BigEndian(bytes, KeepAlive);
+                BufferUtils.WriteUInt32BigEndian(bytes, LifeTime);
+                
+                // TODO: handle resume token
+                // - (16 bits = max value 65,535) Unsigned 16-bit integer of Resume Identification Token Length in bytes. (Not present if R flag is not set)
+                // - Token used for client resume identification (Not present if R flag is not set)
+                // const ushort resumeTokenLength = 0;
+                // WriteBytes(bytes, BitConverter.GetBytes(resumeTokenLength));
+
+                // MetadataMimeType length (uint8)
+                byte metaDataMimeTypeLength = (byte) (MetadataMimeType != null
+                    ? Encoding.ASCII.GetByteCount(MetadataMimeType)
+                    : 0);
+                BufferUtils.WriteInt8(bytes, metaDataMimeTypeLength);
+                if (MetadataMimeType != null)
+                {
+                    // Protocol spec dictates ASCII
+                    bytes.AddRange(Encoding.ASCII.GetBytes(MetadataMimeType));
+                }
+
+                // DataMimeType length (uint8)
+                byte dataMimeTypeLength = (byte) (DataMimeType != null
+                    ? Encoding.UTF8.GetByteCount(DataMimeType)
+                    : 0);
+                BufferUtils.WriteInt8(bytes, dataMimeTypeLength);
+                // WriteBytes(bytes, dataMimeTypeLengthBytes);
+                if (DataMimeType != null)
+                {
+                    // Protocol spec dictates ASCII
+                    bytes.AddRange(Encoding.ASCII.GetBytes(DataMimeType));
+                }
+                
                 WritePayload(bytes);
 
                 return bytes;
@@ -80,8 +94,7 @@ namespace RSocket
                     // Write metadata with length prefix if we have metadata
                     if (Metadata != null)
                     {
-                        UInt24 metaDataLength = new UInt24((uint) Metadata.Count);
-                        bytes.AddRange(metaDataLength.BytesBigEndian);
+                        BufferUtils.WriteUInt24BigEndian(bytes, Metadata.Count);
                         bytes.AddRange(Metadata);
                     }
                     else
@@ -97,50 +110,6 @@ namespace RSocket
                 bytes.AddRange(Data);
             }
 
-            private void WriteHeader(List<byte> bytes)
-            {
-                WriteIntBigEndian(bytes, BitConverter.GetBytes(MajorVersion));
-                WriteIntBigEndian(bytes, BitConverter.GetBytes(MinorVersion));
-                WriteIntBigEndian(bytes, BitConverter.GetBytes(KeepAlive));
-                WriteIntBigEndian(bytes, BitConverter.GetBytes(LifeTime));
-
-                // TODO: handle resume token
-                // - (16 bits = max value 65,535) Unsigned 16-bit integer of Resume Identification Token Length in bytes. (Not present if R flag is not set)
-                // - Token used for client resume identification (Not present if R flag is not set)
-                // const ushort resumeTokenLength = 0;
-                // WriteBytes(bytes, BitConverter.GetBytes(resumeTokenLength));
-
-                // MetadataMimeType length (uint8)
-                byte metaDataMimeTypeLength = (byte) (MetadataMimeType != null
-                    ? Encoding.ASCII.GetByteCount(MetadataMimeType)
-                    : 0);
-                byte[] metadataMimeTypeLengthBytes = {metaDataMimeTypeLength};
-                bytes.AddRange(metadataMimeTypeLengthBytes);
-                // WriteBytes(bytes, metadataMimeTypeLengthBytes);
-                if (MetadataMimeType != null)
-                {
-                    bytes.AddRange(Encoding.ASCII.GetBytes(MetadataMimeType));
-                }
-
-                // DataMimeType length (uint8)
-                byte dataMimeTypeLength = (byte) (DataMimeType != null
-                    ? Encoding.UTF8.GetByteCount(DataMimeType)
-                    : 0);
-                byte[] dataMimeTypeLengthBytes = {dataMimeTypeLength};
-                bytes.AddRange(dataMimeTypeLengthBytes);
-                // WriteBytes(bytes, dataMimeTypeLengthBytes);
-                if (DataMimeType != null)
-                {
-                    bytes.AddRange(Encoding.ASCII.GetBytes(DataMimeType));
-                }
-            }
-
-            private void WriteCommonHeader(List<byte> bytes)
-            {
-                WriteStreamId(bytes);
-                WriteTypeAndFlags(bytes);
-            }
-
             public SetupFrame Deserialize(byte[] bytes)
             {
                 throw new NotImplementedException();
@@ -150,13 +119,8 @@ namespace RSocket
             {
                 List<byte> bytes = Serialize();
                 List<byte> lengthPrefixed = new List<byte>();
-
-                UInt24 length = new UInt24((uint) bytes.Count);
-                IEnumerable<byte> lengthAsBytes = length.BytesBigEndian;
-
-                lengthPrefixed.AddRange(lengthAsBytes);
+                BufferUtils.WriteUInt24BigEndian(lengthPrefixed, bytes.Count);
                 lengthPrefixed.AddRange(bytes);
-
                 return lengthPrefixed;
             }
         }
