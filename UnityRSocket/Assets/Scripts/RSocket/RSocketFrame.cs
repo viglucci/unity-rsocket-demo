@@ -117,6 +117,7 @@ namespace RSocket
 
             public List<byte> SerializeLengthPrefixed()
             {
+                // TODO: improve memory allocation
                 List<byte> bytes = Serialize();
                 List<byte> lengthPrefixed = new List<byte>();
                 BufferUtils.WriteUInt24BigEndian(lengthPrefixed, bytes.Count);
