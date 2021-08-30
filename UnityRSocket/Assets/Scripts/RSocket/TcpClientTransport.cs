@@ -26,6 +26,8 @@ namespace RSocket
 
             _socket.BeginConnect(_host, _port, ar =>
             {
+                Exception ex = null;
+                
                 try
                 {
                     _socket.EndConnect(ar);
@@ -34,13 +36,21 @@ namespace RSocket
                     {
                         return;
                     }
-
-                    TcpDuplexConnection connection = new TcpDuplexConnection(_socket);
-                    callback(connection, null);
                 }
                 catch(Exception e)
                 {
                     Debug.LogError($"Failed to connect on TCP: {e}");
+                    ex = e;
+                }
+
+                if (ex != null)
+                {
+                    callback(null, ex);
+                }
+                else
+                {
+                    TcpDuplexConnection connection = new TcpDuplexConnection(_socket);
+                    callback(connection, null);
                 }
             }, _socket);
         }

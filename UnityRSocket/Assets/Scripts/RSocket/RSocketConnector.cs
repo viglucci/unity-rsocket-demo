@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -27,51 +28,49 @@ namespace RSocket
             _data = data;
         }
 
-        public List<byte> Data
-        {
-            get => _data;
-        }
+        public List<byte> Data => _data;
 
-        public List<byte> Metadata
-        {
-            get => _metadata;
-        }
+        public List<byte> Metadata => _metadata;
 
-        public string DataMimeType
-        {
-            get => _dataMimeType;
-        }
+        public string DataMimeType => _dataMimeType;
 
-        public string MetadataMimeType
-        {
-            get => _metadataMimeType;
-        }
+        public string MetadataMimeType => _metadataMimeType;
 
-        public int KeepAlive
-        {
-            get => _keepAlive;
-        }
+        public int KeepAlive => _keepAlive;
 
-        public int Lifetime
-        {
-            get => _lifetime;
-        }
+        public int Lifetime => _lifetime;
     }
 
     public class RSocketConnector
     {
         private readonly IClientTransport _clientTransport;
-        private readonly SetupOptions _setupOptions;
+        private readonly RSocketFrame.SetupFrame _setupFrame;
 
         public RSocketConnector(
             IClientTransport clientTransport,
             SetupOptions setupOptions)
         {
             _clientTransport = clientTransport;
-            _setupOptions = setupOptions;
+
+            ushort metaDataFlag = (ushort) (setupOptions.Metadata != null
+                ? RSocketFlagType.METADATA
+                : RSocketFlagType.NONE);
+
+            _setupFrame = new RSocketFrame.SetupFrame(0)
+            {
+                Data = setupOptions.Data,
+                DataMimeType = setupOptions.DataMimeType,
+                Metadata = setupOptions.Metadata,
+                MetadataMimeType = setupOptions.MetadataMimeType,
+                KeepAlive = setupOptions.KeepAlive,
+                LifeTime = setupOptions.Lifetime,
+                MajorVersion = 1,
+                MinorVersion = 0,
+                Flags = metaDataFlag
+            };
         }
 
-        public void Bind(Action<IRSocket> onBound)
+        public IEnumerator Bind(Action<IRSocket> onBound)
         {
             _clientTransport.Connect((connection, exception) =>
             {
@@ -82,29 +81,24 @@ namespace RSocket
                 }
 
                 Debug.Log("Transport connected...");
-                Debug.Log(connection);
 
-                RSocketFrame.SetupFrame frame = new RSocketFrame.SetupFrame()
-                {
-                    Type = RSocketFrameType.SETUP,
-                    Data = _setupOptions.Data,
-                    DataMimeType = _setupOptions.DataMimeType,
-                    Metadata = _setupOptions.Metadata,
-                    MetadataMimeType = _setupOptions.MetadataMimeType,
-                    KeepAlive = _setupOptions.KeepAlive,
-                    LifeTime = _setupOptions.Lifetime,
-                    StreamId = 0,
-                    MajorVersion = 1,
-                    MinorVersion = 0,
-                    Flags = (ushort) (_setupOptions.Metadata != null ? RSocketFlagType.METADATA : RSocketFlagType.NONE)
-                };
+                // ConnectionFrameHandler connectionFrameHandler = new ConnectionFrameHandler(connection);
 
                 Debug.Log("Sending SETUP frame...");
+                connection.ConnectionOutbound.Send(_setupFrame);
 
-                connection.Send(frame);
-
-                onBound(new RSocketRequester());
+                onBound(new RSocketRequester(connection));
             });
+
+            yield return null;
+        }
+    }
+
+    public class ConnectionFrameHandler
+    {
+        public ConnectionFrameHandler(IDuplexConnection connection)
+        {
+            throw new NotImplementedException();
         }
     }
 }

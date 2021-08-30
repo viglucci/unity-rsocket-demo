@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Text;
 using RSocket;
@@ -9,6 +10,7 @@ public class ClientManager : MonoBehaviour
 
     [SerializeField] public string host;
     [SerializeField] public int port;
+    private IRSocket _rSocket;
 
     private void Awake()
     {
@@ -34,14 +36,40 @@ public class ClientManager : MonoBehaviour
             metadata: new List<byte>(Encoding.ASCII.GetBytes("This could also be anything")));
         RSocketConnector connector = new RSocketConnector(transport, setupOptions);
 
-        connector.Bind((rsocket) =>
+        StartCoroutine(connector.Bind(rsocket =>
         {
             Debug.Log("RSocket requester bound");
+            _rSocket = rsocket;
 
-            // rsocket.FireAndForget(new RSocketPayload()
-            // {
-            //     Data = new List<byte>(Encoding.ASCII.GetBytes("Hello World"))
-            // }, null);
-        });
+            OnRSocketConnected();
+        }));
+    }
+
+    private void OnRSocketConnected()
+    {
+        void ONNext(RSocketPayload payload, bool isComplete)
+        {
+            throw new NotImplementedException();
+        }
+
+        void ONComplete()
+        {
+            Debug.Log("FNF done");
+        }
+
+        void ONError(Exception e)
+        {
+            throw new NotImplementedException();
+        }
+
+        ICancellable cancellable = _rSocket.FireAndForget(new RSocketPayload
+            {
+                Data = new List<byte>(Encoding.ASCII.GetBytes("Hello World"))
+            },
+            new Subscriber(
+                ONNext,
+                ONComplete,
+                ONError
+            ));
     }
 }
