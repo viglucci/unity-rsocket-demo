@@ -32,6 +32,11 @@ namespace RSocket
             }, _streamFrameHandlers.Keys.ToList());
         }
 
+        public void CreateRequestStream(IExtensionSubscriberWithCancellation frameHandler)
+        {
+            throw new NotImplementedException();
+        }
+
 
         public abstract void Send(ISerializableFrame<RSocketFrame.Frame> frame);
     }

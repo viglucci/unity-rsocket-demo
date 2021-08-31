@@ -205,31 +205,41 @@ namespace RSocket
             }
         }
 
-        public class RequestNFrame : Frame
+        public class RequestNFrame : RequestFrame, ISerializableFrame<RequestNFrame>
         {
             public override RSocketFrameType Type => RSocketFrameType.REQUEST_N;
-
-            public override List<byte> Serialize()
-            {
-                throw new NotImplementedException();
-            }
 
             public RequestNFrame(int streamId) : base(streamId)
             {
             }
-        }
-
-        public class RequestResponseFrame : Frame
-        {
-            public override RSocketFrameType Type => RSocketFrameType.REQUEST_RESPONSE;
-
+            
             public override List<byte> Serialize()
             {
                 throw new NotImplementedException();
             }
 
+            public RequestNFrame Deserialize(byte[] bytes)
+            {
+                throw new NotImplementedException();
+            }
+        }
+
+        public class RequestResponseFrame : RequestFrame, ISerializableFrame<RequestResponseFrame>
+        {
+            public override RSocketFrameType Type => RSocketFrameType.REQUEST_RESPONSE;
+
             public RequestResponseFrame(int streamId) : base(streamId)
             {
+            }
+            
+            public override List<byte> Serialize()
+            {
+                throw new NotImplementedException();
+            }
+
+            public RequestResponseFrame Deserialize(byte[] bytes)
+            {
+                throw new NotImplementedException();
             }
         }
 

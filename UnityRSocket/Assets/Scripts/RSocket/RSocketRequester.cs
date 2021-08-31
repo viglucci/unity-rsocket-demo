@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 namespace RSocket
 {
@@ -13,7 +14,8 @@ namespace RSocket
 
         public ICancellable FireAndForget(IPayload payload, ISubscriber responderStream)
         {
-            RequestFnFRequesterHandler handler = new RequestFnFRequesterHandler(payload, responderStream);
+            RequestFnFRequesterHandler handler
+                = new RequestFnFRequesterHandler(payload, responderStream);
 
             _connection.CreateRequestStream(handler);
 
@@ -22,10 +24,16 @@ namespace RSocket
 
         public IExtensionSubscriberWithCancellation RequestResponse(IPayload payload, ISubscriber responderStream)
         {
-            throw new System.NotImplementedException();
+            RequestResponseRequesterStream handler
+                = new RequestResponseRequesterStream(payload, responderStream);
+
+            _connection.CreateRequestStream(handler as IStreamFrameStreamLifecyleHandler);
+
+            return handler;
         }
 
-        public ISubscriptionWithExtensionSubscriber RequestStream(IPayload payload, int initialRequestN, ISubscriber responderStream)
+        public ISubscriptionWithExtensionSubscriber RequestStream(IPayload payload, int initialRequestN,
+            ISubscriber responderStream)
         {
             throw new System.NotImplementedException();
         }
@@ -37,13 +45,139 @@ namespace RSocket
         }
     }
 
+    public class RequestResponseRequesterStream : IExtensionSubscriberWithCancellation, IFrameHandler
+    {
+        private bool _done;
+
+        private readonly IPayload _payload;
+        private readonly ISubscriber _receiver;
+        private IStream _stream;
+
+        public RSocketFrameType StreamType { get; }
+        public int StreamId { get; private set; }
+
+        public RequestResponseRequesterStream(IPayload payload, ISubscriber responderStream)
+        {
+            _payload = payload;
+            _receiver = responderStream;
+        }
+
+        public bool HandleReady(int streamId, IStream stream)
+        {
+            if (_done)
+            {
+                return false;
+            }
+
+            StreamId = streamId;
+            _stream = stream;
+
+            stream.Send(new RSocketFrame.RequestResponseFrame(streamId)
+            {
+                Data = _payload.Data,
+                Metadata = _payload.Metadata
+            });
+
+            return true;
+        }
+
+        public void HandleReject(Exception exception)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void Handle(RSocketFrame.Frame frame)
+        {
+            switch (frame.Type)
+            {
+                case RSocketFrameType.PAYLOAD:
+                {
+                    HandlePayloadFrame((RSocketFrame.RequestFrame) frame);
+                    return;
+                }
+                case RSocketFrameType.ERROR:
+                {
+                    HandleErrorFrame((RSocketFrame.ErrorFrame) frame);
+                    return;
+                }
+                case RSocketFrameType.EXT:
+                {
+                    throw new NotImplementedException();
+                    break;
+                }
+                default:
+                {
+                    Close(new RSocketError(RSocketErrorCodes.CANCELED, "Received unexpected frame"));
+
+                    // TODO: send cancel frame
+
+                    return;
+                }
+            }
+        }
+
+        private void HandleErrorFrame(RSocketFrame.ErrorFrame frame)
+        {
+            _done = true;
+
+            // TODO: get actual error code and message from frame
+            _receiver.OnError(new RSocketError(RSocketErrorCodes.REJECTED, "An unexpected error occurred"));
+
+            return;
+        }
+
+        private void HandlePayloadFrame(RSocketFrame.RequestFrame frame)
+        {
+            bool hasComplete = RSocketFlagUtils.HasComplete(frame.Flags);
+            bool hasPayload = RSocketFlagUtils.HasNext(frame.Flags);
+            bool hasFollows = RSocketFlagUtils.HasFollows(frame.Flags);
+
+            if (hasComplete || !hasFollows)
+            {
+                _done = true;
+
+                if (!hasPayload)
+                {
+                    // TODO: add validation no frame in reassembly
+                    _receiver.OnComplete();
+                    return;
+                }
+            }
+
+            RSocketPayload payload = new RSocketPayload()
+            {
+                Data = frame.Data,
+                Metadata = frame.Metadata
+            };
+
+            _receiver.OnNext(payload, true);
+
+            return;
+        }
+
+        public void OnExtension(int extendedType, List<byte> content, bool canBeIgnored)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void Cancel()
+        {
+            throw new NotImplementedException();
+        }
+
+        public void Close(Exception error)
+        {
+            throw new NotImplementedException();
+        }
+    }
+
     public class RequestFnFRequesterHandler : IStreamFrameStreamLifecyleHandler, ICancellable
     {
         private bool done;
-        
+
         private readonly IPayload _payload;
         private readonly ISubscriber _receiver;
-        
+
         public RSocketFrameType StreamType { get; }
         public int StreamId { get; private set; }
 
@@ -57,11 +191,6 @@ namespace RSocket
         {
             throw new System.NotImplementedException();
         }
-        
-        public void Cancel()
-        {
-            throw new System.NotImplementedException();
-        }
 
         public bool HandleReady(int streamId, IStream stream)
         {
@@ -69,7 +198,7 @@ namespace RSocket
             {
                 return false;
             }
-            
+
             StreamId = streamId;
 
             stream.Send(new RSocketFrame.RequestFnfFrame(streamId)
@@ -79,13 +208,23 @@ namespace RSocket
             });
 
             done = true;
-            
+
             _receiver.OnComplete();
 
             return true;
         }
 
         public void HandleReject(Exception exception)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void Cancel()
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public void Close(Exception error)
         {
             throw new NotImplementedException();
         }

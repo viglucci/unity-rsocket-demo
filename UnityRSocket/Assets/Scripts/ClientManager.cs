@@ -47,29 +47,14 @@ public class ClientManager : MonoBehaviour
 
     private void OnRSocketConnected()
     {
-        void ONNext(RSocketPayload payload, bool isComplete)
-        {
-            throw new NotImplementedException();
-        }
-
-        void ONComplete()
-        {
-            Debug.Log("FNF done");
-        }
-
-        void ONError(Exception e)
-        {
-            throw new NotImplementedException();
-        }
-
         ICancellable cancellable = _rSocket.FireAndForget(new RSocketPayload
             {
                 Data = new List<byte>(Encoding.ASCII.GetBytes("Hello World"))
             },
             new Subscriber(
-                ONNext,
-                ONComplete,
-                ONError
+                (payload, isComplete) => throw new NotImplementedException(),
+                () => Debug.Log("FireAndForget done"),
+                e => Debug.LogError(e)
             ));
     }
 }

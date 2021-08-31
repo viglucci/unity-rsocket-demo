@@ -86,6 +86,8 @@ namespace RSocket
     public interface IFrameHandler
     {
         public void Handle(RSocketFrame.Frame frame);
+        
+        public void Close(Exception error);
     }
 
     public interface IStreamFrameHandler : IFrameHandler
@@ -104,7 +106,6 @@ namespace RSocket
 
     public interface IStream : IOutboundConnection
     {
-        
     }
     
     public interface IStreamFrameStreamLifecyleHandler
