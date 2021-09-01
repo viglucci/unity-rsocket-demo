@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net.Sockets;
 using UnityEngine;
 
@@ -11,6 +12,7 @@ namespace RSocket
 
         private readonly NetworkStream _stream;
         private readonly byte[] _receiveBuffer;
+        private List<byte> _remainingBuffer = new List<byte>();
 
         public IOutboundConnection ConnectionOutbound => this;
 
@@ -51,7 +53,14 @@ namespace RSocket
 
         private void HandleData(byte[] data)
         {
-            throw new NotImplementedException();
+            List<byte> buffer = _remainingBuffer.Concat(data).ToList();
+            int lastOffset = 0;
+
+            List<(RSocketFrame.Frame, int)> frames = RSocketFrameDeserializer.DeserializeFrames(buffer);
+            foreach ((RSocketFrame.Frame frame, int offset) frame in frames)
+            {
+                lastOffset = frame.offset;
+            }
         }
 
         public override void Send(ISerializableFrame<RSocketFrame.Frame> frame)
@@ -75,6 +84,16 @@ namespace RSocket
             {
                 Debug.Log($"Error sending data to server via TCP: {ex}");
             }
-        } 
+        }
+
+        public void ConnectionInBound(Action<RSocketFrame.Frame> handler)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void HandleRequestStream(Func<RSocketFrame.RequestFrame, bool> handler)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

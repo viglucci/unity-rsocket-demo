@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 
 namespace RSocket
 {
@@ -44,6 +46,35 @@ namespace RSocket
         {
             UInt24 length = new UInt24((uint) value);
             target.AddRange(length.BytesBigEndian);
+        }
+
+        public static (int value, int nextOffset) ReadUint16BigEndian(List<byte> target, int offset)
+        {
+            byte[] bytes = target.GetRange(offset, 2).ToArray();
+            if (BitConverter.IsLittleEndian)
+            {
+                Array.Reverse(bytes);
+            }
+            int value = BitConverter.ToInt16(bytes, 0);
+            return (value, offset + 1);
+        }
+        
+        public static (int value, int nextOffset) ReadUInt24BigEndian(List<byte> target, int offset)
+        {
+            int value1 = target[offset] << 16;
+            int value2 = target[offset + 1] << 24;
+            int value3 = target[offset + 2];
+            return (value1 | value2 | value3, offset + 3);
+        }
+
+        public static (int value, int nextOffset) ReadUInt32BigEndian(List<byte> target, int offset)
+        {
+            int value1 = target[offset] << 16;
+            int value2 = target[offset + 1] << 24;
+            int value3 = target[offset + 2];
+            int value4 = target[offset + 3];
+            int value = value1 | value2 | value3 | value4;
+            return (value, offset + 4);
         }
     }
 }

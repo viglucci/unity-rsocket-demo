@@ -47,14 +47,24 @@ public class ClientManager : MonoBehaviour
 
     private void OnRSocketConnected()
     {
-        ICancellable cancellable = _rSocket.FireAndForget(new RSocketPayload
+        ICancellable fnfCancellable = _rSocket.FireAndForget(new RSocketPayload
             {
-                Data = new List<byte>(Encoding.ASCII.GetBytes("Hello World"))
+                Data = new List<byte>(Encoding.ASCII.GetBytes("PING"))
             },
             new Subscriber(
                 (payload, isComplete) => throw new NotImplementedException(),
                 () => Debug.Log("FireAndForget done"),
-                e => Debug.LogError(e)
+                Debug.LogError
+            ));
+        
+        ICancellable requestResponseCancellable = _rSocket.RequestResponse(new RSocketPayload
+            {
+                Data = new List<byte>(Encoding.ASCII.GetBytes("PING"))
+            },
+            new Subscriber(
+                (payload, isComplete) => Debug.Log($"payload: {payload}, isComplete: {isComplete}"),
+                () => Debug.Log("RequestResponse done"),
+                Debug.LogError
             ));
     }
 }

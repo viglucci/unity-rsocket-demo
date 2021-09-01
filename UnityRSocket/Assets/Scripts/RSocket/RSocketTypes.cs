@@ -67,7 +67,7 @@ namespace RSocket
         public void Connect(Action<IDuplexConnection, Exception> callback);
     }
 
-    public interface IDuplexConnection : ICloseable, IMultiplexer
+    public interface IDuplexConnection : ICloseable, IMultiplexer, IDemultiplexer
     {
     }
 
@@ -81,6 +81,8 @@ namespace RSocket
     public interface IDemultiplexer
     {
         public void ConnectionInBound(Action<RSocketFrame.Frame> handler);
+
+        public void HandleRequestStream(Func<RSocketFrame.RequestFrame, bool> handler);
     }
 
     public interface IFrameHandler

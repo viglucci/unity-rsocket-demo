@@ -27,7 +27,7 @@ namespace RSocket
             RequestResponseRequesterStream handler
                 = new RequestResponseRequesterStream(payload, responderStream);
 
-            _connection.CreateRequestStream(handler as IStreamFrameStreamLifecyleHandler);
+            _connection.CreateRequestStream(handler);
 
             return handler;
         }
@@ -45,7 +45,7 @@ namespace RSocket
         }
     }
 
-    public class RequestResponseRequesterStream : IExtensionSubscriberWithCancellation, IFrameHandler
+    public class RequestResponseRequesterStream : IExtensionSubscriberWithCancellation, IStreamFrameStreamLifecyleHandler
     {
         private bool _done;
 
@@ -122,8 +122,6 @@ namespace RSocket
 
             // TODO: get actual error code and message from frame
             _receiver.OnError(new RSocketError(RSocketErrorCodes.REJECTED, "An unexpected error occurred"));
-
-            return;
         }
 
         private void HandlePayloadFrame(RSocketFrame.RequestFrame frame)
@@ -151,8 +149,6 @@ namespace RSocket
             };
 
             _receiver.OnNext(payload, true);
-
-            return;
         }
 
         public void OnExtension(int extendedType, List<byte> content, bool canBeIgnored)

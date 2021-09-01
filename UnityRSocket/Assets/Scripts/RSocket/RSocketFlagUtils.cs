@@ -2,6 +2,9 @@ namespace RSocket
 {
     public class RSocketFlagUtils
     {
+        public static int FrameTypeOffset { get; } = 10;
+        public static int FlagsMask { get; } = 1023;
+
         public static bool HasMetadata(int flags)
         {
             return (flags & (int) RSocketFlagType.METADATA) == (int) RSocketFlagType.METADATA;

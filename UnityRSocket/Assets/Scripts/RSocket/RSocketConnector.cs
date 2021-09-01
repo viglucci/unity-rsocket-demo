@@ -83,7 +83,9 @@ namespace RSocket
                 Debug.Log("Transport connected...");
 
                 // ConnectionFrameHandler connectionFrameHandler = new ConnectionFrameHandler(connection);
-
+                // var streamsHandler = new RSocketStreamHandler();
+                // connection.HandleRequestStream();
+                
                 Debug.Log("Sending SETUP frame...");
                 connection.ConnectionOutbound.Send(_setupFrame);
 
@@ -91,14 +93,6 @@ namespace RSocket
             });
 
             yield return null;
-        }
-    }
-
-    public class ConnectionFrameHandler
-    {
-        public ConnectionFrameHandler(IDuplexConnection connection)
-        {
-            throw new NotImplementedException();
         }
     }
 }
