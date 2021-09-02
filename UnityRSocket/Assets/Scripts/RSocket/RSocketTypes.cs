@@ -27,7 +27,7 @@ namespace RSocket
         
         public void OnComplete();
 
-        public void OnError(Exception error);
+        public void OnError(RSocketError error);
     }
 
     public interface IExtensionSubscriber
@@ -39,8 +39,15 @@ namespace RSocket
     {
     }
 
-    public interface ISubscriptionWithExtensionSubscriber : ISubscription, IExtensionSubscriber
+    public interface IRequestableCancellableOnExtensenionSubscriber
+        : ISubscriber, IExtensionSubscriber, ICancellable, IRequestable
     {
+        
+    }
+
+    public interface IRequestable
+    {
+        public void Request(int requestN);
     }
 
     public interface ISubscriberExtensionSubscriberUnionWithSubscription : ISubscriber, IExtensionSubscriber,
@@ -52,10 +59,10 @@ namespace RSocket
     {
         public ICancellable FireAndForget(IPayload payload, [NotNull] ISubscriber responderStream);
 
-        public IExtensionSubscriberWithCancellation RequestResponse(IPayload payload, ISubscriber responderStream);
+        public CancellableWrapper RequestResponse(IPayload payload, ISubscriber responderStream);
 
-        public ISubscriptionWithExtensionSubscriber RequestStream(IPayload payload, int initialRequestN,
-            ISubscriber responderStream);
+        public ICancellableRequestable RequestStream(IPayload payload,
+            ISubscriber responderStream, int initialRequestN);
 
         public ISubscriberExtensionSubscriberUnionWithSubscription
             RequestChannel(IPayload payload, int initialRequestN, bool isComplete,
@@ -112,6 +119,11 @@ namespace RSocket
     
     public interface IStreamFrameStreamLifecyleHandler
         : IStreamFrameHandler, IStreamLifecycleHandle {}
+    
+    public interface IRequestableStreamFrameStreamLifecyleHandler
+        : IStreamFrameHandler, IStreamLifecycleHandle, IRequestable {}
+    
+    public interface ICancellableRequestable : ICancellable, IRequestable {}
     
     public interface IAvailabilityProvider
     {

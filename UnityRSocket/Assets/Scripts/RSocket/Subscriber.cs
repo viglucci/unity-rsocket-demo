@@ -6,12 +6,12 @@ namespace RSocket
     {
         private readonly Action<IPayload, bool> _onNext;
         private readonly Action _onComplete;
-        private readonly Action<Exception> _onError;
+        private readonly Action<RSocketError> _onError;
 
         public Subscriber(
             Action<IPayload, bool> onNext,
             Action onComplete,
-            Action<Exception> onError)
+            Action<RSocketError> onError)
         {
             _onNext = onNext;
             _onComplete = onComplete;
@@ -28,7 +28,7 @@ namespace RSocket
             _onComplete.Invoke();
         }
 
-        public void OnError(Exception error)
+        public void OnError(RSocketError error)
         {
             _onError.Invoke(error);
         }

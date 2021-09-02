@@ -7,7 +7,7 @@ namespace RSocket
     public interface ISerializableFrame<out T>
     {
         public List<byte> Serialize();
-        public T Deserialize(byte[] bytes);
+
         List<byte> SerializeLengthPrefixed();
     }
 
@@ -91,6 +91,9 @@ namespace RSocket
 
         public class ErrorFrame : Frame
         {
+            public int Code { get; }
+            public string Message { get; }
+
             public override RSocketFrameType Type => RSocketFrameType.ERROR;
 
             public override List<byte> Serialize()
@@ -98,8 +101,10 @@ namespace RSocket
                 throw new NotImplementedException();
             }
 
-            public ErrorFrame(int streamId) : base(streamId)
+            public ErrorFrame(int streamId, int codeValue, string message) : base(streamId)
             {
+                Code = codeValue;
+                Message = message;
             }
         }
 
@@ -198,11 +203,6 @@ namespace RSocket
 
                 return bytes;
             }
-
-            public RequestFnfFrame Deserialize(byte[] bytes)
-            {
-                throw new NotImplementedException();
-            }
         }
 
         public class RequestNFrame : RequestFrame, ISerializableFrame<RequestNFrame>
@@ -214,11 +214,6 @@ namespace RSocket
             }
             
             public override List<byte> Serialize()
-            {
-                throw new NotImplementedException();
-            }
-
-            public RequestNFrame Deserialize(byte[] bytes)
             {
                 throw new NotImplementedException();
             }
@@ -249,24 +244,36 @@ namespace RSocket
 
                 return bytes;
             }
-
-            public RequestResponseFrame Deserialize(byte[] bytes)
-            {
-                throw new NotImplementedException();
-            }
         }
 
-        public class RequestStreamFrame : Frame
+        public class RequestStreamFrame : RequestFrame, ISerializableFrame<Frame>
         {
             public override RSocketFrameType Type => RSocketFrameType.REQUEST_STREAM;
-
-            public override List<byte> Serialize()
-            {
-                throw new NotImplementedException();
-            }
-
+            public int RequestN { get; set; }
+            
             public RequestStreamFrame(int streamId) : base(streamId)
             {
+            }
+            
+            public override List<byte> Serialize()
+            {
+                List<byte> bytes = new List<byte>();
+                
+                // Stream ID
+                BufferUtils.WriteUInt32BigEndian(bytes, StreamId);
+                
+                // Type and Flags
+                int type = (int) Type << FrameTypeOffset;
+                int flags = Flags & FlagsMask;
+                Int16 typeAndFlags = (Int16) (type | flags);
+                BufferUtils.WriteUInt16BigEndian(bytes, typeAndFlags);
+                
+                // RequestN
+                BufferUtils.WriteUInt32BigEndian(bytes, RequestN);
+                
+                WritePayload(bytes);
+                
+                return bytes;
             }
         }
 
@@ -365,11 +372,6 @@ namespace RSocket
                 WritePayload(bytes);
 
                 return bytes;
-            }
-
-            public SetupFrame Deserialize(byte[] bytes)
-            {
-                throw new NotImplementedException();
             }
         }
 

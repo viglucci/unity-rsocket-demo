@@ -57,47 +57,56 @@ public class ClientManager : MonoBehaviour
         //         Debug.LogError
         //     ));
 
-        var requestResponseSubscriber = new Subscriber(
-            (payload, isComplete) =>
+        // var requestResponseSubscriber = new Subscriber(
+        //     (payload, isComplete) =>
+        //     {
+        //         string decodedData = Encoding.UTF8.GetString(payload.Data.ToArray());
+        //         string decodedMetadata = Encoding.UTF8.GetString(payload.Metadata.ToArray());
+        //
+        //         Debug.Log($"[data: {decodedData}, " +
+        //                   $"metadata: {decodedMetadata}, " +
+        //                   $"isComplete: {isComplete}]");
+        //
+        //         if (isComplete)
+        //         {
+        //             Debug.Log("RequestResponse done");
+        //         }
+        //     },
+        //     () => Debug.Log("RequestResponse done"),
+        //     Debug.LogError
+        // );
+        //
+        // _rSocket.RequestResponse(new RSocketPayload
+        //     {
+        //         Data = new List<byte>(Encoding.ASCII.GetBytes("PING"))
+        //     },
+        //     requestResponseSubscriber);
+
+        _rSocket.RequestStream(new RSocketPayload
             {
-                string decodedData = Encoding.UTF8.GetString(payload.Data.ToArray());
-                string decodedMetadata = Encoding.UTF8.GetString(payload.Metadata.ToArray());
-
-                Debug.Log($"[data: {decodedData}, " +
-                          $"metadata: {decodedMetadata}, " +
-                          $"isComplete: {isComplete}]");
-
-                if (isComplete)
+                Data = new List<byte>(Encoding.ASCII.GetBytes("PING"))
+            },
+            new Subscriber(
+                (payload, isComplete) =>
                 {
-                    Debug.Log("RequestResponse done");
+                    string decodedData = Encoding.UTF8.GetString(payload.Data.ToArray());
+                    string decodedMetadata = Encoding.UTF8.GetString(payload.Metadata.ToArray());
+
+                    Debug.Log($"[data: {decodedData}, " +
+                              $"metadata: {decodedMetadata}, " +
+                              $"isComplete: {isComplete}]");
+
+                    if (isComplete)
+                    {
+                        Debug.Log("RequestResponse done");
+                    }
+                },
+                () => Debug.Log("RequestResponse done"),
+                (error) =>
+                {
+                    Debug.LogError($"[code: {error.Code}, message: {error.Message}]", this);
                 }
-            },
-            () => Debug.Log("RequestResponse done"),
-            Debug.LogError
-        );
-        
-        Debug.Log("RequestResponse 1");
-        
-        _rSocket.RequestResponse(new RSocketPayload
-            {
-                Data = new List<byte>(Encoding.ASCII.GetBytes("PING"))
-            },
-            requestResponseSubscriber);
-        
-        Debug.Log("RequestResponse 2");
-        
-        _rSocket.RequestResponse(new RSocketPayload
-            {
-                Data = new List<byte>(Encoding.ASCII.GetBytes("PING"))
-            },
-            requestResponseSubscriber);
-        
-        Debug.Log("RequestResponse 3");
-        
-        _rSocket.RequestResponse(new RSocketPayload
-            {
-                Data = new List<byte>(Encoding.ASCII.GetBytes("PING"))
-            },
-            requestResponseSubscriber);
+            ),
+            3);
     }
 }

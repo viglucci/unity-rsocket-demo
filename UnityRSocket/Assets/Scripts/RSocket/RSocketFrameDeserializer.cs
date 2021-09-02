@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Text;
 
 namespace RSocket
 {
@@ -44,9 +45,26 @@ namespace RSocket
             {
                 case RSocketFrameType.PAYLOAD:
                     return DeserializePayloadFrame(frameBuffer, streamId.value, flags, offset);
+                case RSocketFrameType.ERROR:
+                    return DeserializeErrorFrame(frameBuffer, streamId.value, flags, offset);
                 default:
                     throw new NotImplementedException();
             }
+        }
+
+        private static RSocketFrame.Frame DeserializeErrorFrame(List<byte> frameBuffer, int streamId, int flags, int offset)
+        {
+            (int value, int nextOffset) code = BufferUtils.ReadUInt32BigEndian(frameBuffer, offset);
+            offset = code.nextOffset;
+            int messageLength = frameBuffer.Count - offset;
+            string message = "";
+            if (messageLength > 0)
+            {
+                byte[] messageBytes = frameBuffer.GetRange(offset, messageLength).ToArray();
+                message = Encoding.UTF8.GetString(messageBytes);
+            }
+
+            return new RSocketFrame.ErrorFrame(streamId, code.value, message);
         }
 
         private static RSocketFrame.Frame DeserializePayloadFrame(
