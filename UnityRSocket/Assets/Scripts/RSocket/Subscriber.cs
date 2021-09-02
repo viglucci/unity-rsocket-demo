@@ -4,12 +4,12 @@ namespace RSocket
 {
     public class Subscriber : ISubscriber
     {
-        private readonly Action<RSocketPayload, bool> _onNext;
+        private readonly Action<IPayload, bool> _onNext;
         private readonly Action _onComplete;
         private readonly Action<Exception> _onError;
 
         public Subscriber(
-            Action<RSocketPayload, bool> onNext,
+            Action<IPayload, bool> onNext,
             Action onComplete,
             Action<Exception> onError)
         {
@@ -20,7 +20,7 @@ namespace RSocket
 
         public void OnNext(IPayload payload, bool isComplete)
         {
-            throw new NotImplementedException();
+            _onNext.Invoke(payload, isComplete);
         }
 
         public void OnComplete()
@@ -30,7 +30,7 @@ namespace RSocket
 
         public void OnError(Exception error)
         {
-            throw new NotImplementedException();
+            _onError.Invoke(error);
         }
     }
 }

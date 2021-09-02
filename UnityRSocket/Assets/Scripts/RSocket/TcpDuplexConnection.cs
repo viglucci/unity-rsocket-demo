@@ -13,6 +13,7 @@ namespace RSocket
         private readonly NetworkStream _stream;
         private readonly byte[] _receiveBuffer;
         private List<byte> _remainingBuffer = new List<byte>();
+        private RSocketStreamHandler _streamHandler;
 
         public IOutboundConnection ConnectionOutbound => this;
 
@@ -22,11 +23,6 @@ namespace RSocket
             _receiveBuffer = new byte[DataBufferSize];
             _stream = socket.GetStream();
             _stream.BeginRead(_receiveBuffer, 0, DataBufferSize, OnData, null);
-        }
-
-        public void Handle()
-        {
-            throw new NotImplementedException();
         }
 
         private void OnData(IAsyncResult ar)
@@ -57,10 +53,13 @@ namespace RSocket
             int lastOffset = 0;
 
             List<(RSocketFrame.Frame, int)> frames = RSocketFrameDeserializer.DeserializeFrames(buffer);
-            foreach ((RSocketFrame.Frame frame, int offset) frame in frames)
+            foreach ((RSocketFrame.Frame frame, int offset) in frames)
             {
-                lastOffset = frame.offset;
+                lastOffset = offset;
+                Handle(frame);
             }
+
+            _remainingBuffer = new ArraySegment<byte>(data, lastOffset, data.Length - lastOffset).ToList();
         }
 
         public override void Send(ISerializableFrame<RSocketFrame.Frame> frame)
@@ -91,7 +90,7 @@ namespace RSocket
             throw new NotImplementedException();
         }
 
-        public void HandleRequestStream(Func<RSocketFrame.RequestFrame, bool> handler)
+        public void HandleRequestStream(RSocketStreamHandler handler)
         {
             throw new NotImplementedException();
         }

@@ -83,8 +83,10 @@ namespace RSocket
                 Debug.Log("Transport connected...");
 
                 // ConnectionFrameHandler connectionFrameHandler = new ConnectionFrameHandler(connection);
+                // connection.ConnectionInBound(connectionFrameHandler);
+                
                 // var streamsHandler = new RSocketStreamHandler();
-                // connection.HandleRequestStream();
+                // connection.HandleRequestStream(streamsHandler);
                 
                 Debug.Log("Sending SETUP frame...");
                 connection.ConnectionOutbound.Send(_setupFrame);

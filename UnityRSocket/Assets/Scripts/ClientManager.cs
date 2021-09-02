@@ -62,7 +62,20 @@ public class ClientManager : MonoBehaviour
                 Data = new List<byte>(Encoding.ASCII.GetBytes("PING"))
             },
             new Subscriber(
-                (payload, isComplete) => Debug.Log($"payload: {payload}, isComplete: {isComplete}"),
+                (payload, isComplete) =>
+                {
+                    string decodedData = Encoding.UTF8.GetString(payload.Data.ToArray());
+                    string decodedMetadata = Encoding.UTF8.GetString(payload.Metadata.ToArray());
+                    
+                    Debug.Log($"[data: {decodedData}, " +
+                              $"metadata: {decodedMetadata}, " +
+                              $"isComplete: {isComplete}]");
+                    
+                    if (isComplete)
+                    {
+                        Debug.Log("RequestResponse done");
+                    }
+                },
                 () => Debug.Log("RequestResponse done"),
                 Debug.LogError
             ));

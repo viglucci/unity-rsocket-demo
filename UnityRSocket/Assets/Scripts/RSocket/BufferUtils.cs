@@ -56,7 +56,7 @@ namespace RSocket
                 Array.Reverse(bytes);
             }
             int value = BitConverter.ToInt16(bytes, 0);
-            return (value, offset + 1);
+            return (value, offset + 2);
         }
         
         public static (int value, int nextOffset) ReadUInt24BigEndian(List<byte> target, int offset)

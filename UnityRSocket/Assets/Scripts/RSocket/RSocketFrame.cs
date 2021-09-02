@@ -18,13 +18,13 @@ namespace RSocket
 
         public abstract class Frame
         {
+            public int StreamId { get; private set; }
+            public ushort Flags { get; set; }
+
             protected Frame(int streamId)
             {
                 StreamId = streamId;
             }
-
-            public int StreamId { get; private set; }
-            public ushort Flags;
 
             public abstract RSocketFrameType Type { get; }
 
@@ -131,7 +131,7 @@ namespace RSocket
             }
         }
 
-        public class PayloadFrame : Frame
+        public class PayloadFrame : RequestFrame
         {
             public override RSocketFrameType Type => RSocketFrameType.PAYLOAD;
 

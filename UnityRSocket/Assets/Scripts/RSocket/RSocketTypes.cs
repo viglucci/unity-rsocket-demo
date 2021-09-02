@@ -82,7 +82,7 @@ namespace RSocket
     {
         public void ConnectionInBound(Action<RSocketFrame.Frame> handler);
 
-        public void HandleRequestStream(Func<RSocketFrame.RequestFrame, bool> handler);
+        public void HandleRequestStream(RSocketStreamHandler handler);
     }
 
     public interface IFrameHandler
