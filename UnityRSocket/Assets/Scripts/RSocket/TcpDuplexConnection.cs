@@ -15,10 +15,9 @@ namespace RSocket
         private List<byte> _remainingBuffer = new List<byte>();
         private RSocketStreamHandler _streamHandler;
 
-        public IOutboundConnection ConnectionOutbound => this;
+        public new IOutboundConnection ConnectionOutbound => this;
 
-        public TcpDuplexConnection(TcpClient socket)
-            : base(streamIdGenerator: StreamIdGenerator.Create(-1))
+        public TcpDuplexConnection(TcpClient socket) : base(StreamIdGenerator.Create(-1))
         {
             _receiveBuffer = new byte[DataBufferSize];
             _stream = socket.GetStream();
