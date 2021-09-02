@@ -319,7 +319,7 @@ namespace RSocket
                 Metadata = frame.Metadata
             };
 
-            _receiver.OnNext(payload, true);
+            _receiver.OnNext(payload, hasComplete);
         }
 
         public void Close(Exception error)
