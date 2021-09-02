@@ -47,8 +47,6 @@ namespace RSocket
             }
             
             handler.Handle(frame);
-
-            throw new NotImplementedException();
         }
         
         public void CreateRequestStream(IStreamFrameStreamLifecyleHandler streamHandler)
