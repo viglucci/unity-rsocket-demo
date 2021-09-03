@@ -47,29 +47,64 @@ public class ClientManager : MonoBehaviour
 
     private void OnRSocketConnected()
     {
-        void ONNext(RSocketPayload payload, bool isComplete)
-        {
-            throw new NotImplementedException();
-        }
-
-        void ONComplete()
-        {
-            Debug.Log("FNF done");
-        }
-
-        void ONError(Exception e)
-        {
-            throw new NotImplementedException();
-        }
-
-        ICancellable cancellable = _rSocket.FireAndForget(new RSocketPayload
+        _rSocket.FireAndForget(new RSocketPayload
             {
-                Data = new List<byte>(Encoding.ASCII.GetBytes("Hello World"))
+                Data = new List<byte>(Encoding.ASCII.GetBytes("PING"))
             },
             new Subscriber(
-                ONNext,
-                ONComplete,
-                ONError
+                (payload, isComplete) => throw new NotImplementedException(),
+                () => Debug.Log("FireAndForget done"),
+                Debug.LogError
             ));
+        
+        _rSocket.RequestResponse(new RSocketPayload
+            {
+                Data = new List<byte>(Encoding.ASCII.GetBytes("PING"))
+            },
+            new Subscriber(
+                (payload, isComplete) =>
+                {
+                    string decodedData = Encoding.UTF8.GetString(payload.Data.ToArray());
+                    string decodedMetadata = Encoding.UTF8.GetString(payload.Metadata.ToArray());
+        
+                    Debug.Log($"[data: {decodedData}, " +
+                              $"metadata: {decodedMetadata}, " +
+                              $"isComplete: {isComplete}]");
+        
+                    if (isComplete)
+                    {
+                        Debug.Log("RequestResponse done");
+                    }
+                },
+                () => Debug.Log("RequestResponse done"),
+                Debug.LogError
+            ));
+
+        _rSocket.RequestStream(new RSocketPayload
+            {
+                Data = new List<byte>(Encoding.ASCII.GetBytes("PING"))
+            },
+            new Subscriber(
+                (payload, isComplete) =>
+                {
+                    string decodedData = Encoding.UTF8.GetString(payload.Data.ToArray());
+                    string decodedMetadata = Encoding.UTF8.GetString(payload.Metadata.ToArray());
+
+                    Debug.Log($"[data: {decodedData}, " +
+                              $"metadata: {decodedMetadata}, " +
+                              $"isComplete: {isComplete}]");
+
+                    if (isComplete)
+                    {
+                        Debug.Log("RequestStream done");
+                    }
+                },
+                () => Debug.Log("RequestStream done"),
+                (error) =>
+                {
+                    Debug.LogError($"[code: {error.Code}, message: {error.Message}]", this);
+                }
+            ),
+            100);
     }
 }

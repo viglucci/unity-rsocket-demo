@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using UnityEngine;
 
 namespace RSocket
 {
@@ -17,6 +18,37 @@ namespace RSocket
             _streamIdGenerator = streamIdGenerator;
         }
 
+        protected void Handle(RSocketFrame.Frame frame)
+        {
+            if (frame.Type == RSocketFrameType.RESERVED)
+            {
+                // TODO: throw
+                return;
+            }
+
+            if (RSocketFrameUtils.IsConnectionFrame(frame))
+            {
+                // TODO: Connection stream handling
+                throw new NotImplementedException();
+            }
+
+            if (RSocketFrameUtils.IsRequestFrame(frame))
+            {
+                // TODO: Request stream handling
+                throw new NotImplementedException();
+            }
+
+            _streamFrameHandlers.TryGetValue(frame.StreamId, out IStreamFrameHandler handler);
+
+            if (handler == null)
+            {
+                Debug.LogWarning($"Failed to find handler for unknown stream {frame.StreamId} for frame type ${frame.Type}.");
+                return;
+            }
+            
+            handler.Handle(frame);
+        }
+        
         public void CreateRequestStream(IStreamFrameStreamLifecyleHandler streamHandler)
         {
             if (Done)
@@ -31,8 +63,7 @@ namespace RSocket
                 return streamHandler.HandleReady(streamId, this);
             }, _streamFrameHandlers.Keys.ToList());
         }
-
-
+        
         public abstract void Send(ISerializableFrame<RSocketFrame.Frame> frame);
     }
 }

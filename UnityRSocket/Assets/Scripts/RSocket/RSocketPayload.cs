@@ -5,6 +5,6 @@ namespace RSocket
     public class RSocketPayload : IPayload
     {
         public List<byte> Data { get; set; }
-        public List<byte> Metadata { get; }
+        public List<byte> Metadata { get; set; }
     }
 }

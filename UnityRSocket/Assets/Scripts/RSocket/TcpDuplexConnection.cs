@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net.Sockets;
 using UnityEngine;
 
@@ -11,20 +12,16 @@ namespace RSocket
 
         private readonly NetworkStream _stream;
         private readonly byte[] _receiveBuffer;
+        private List<byte> _remainingBuffer = new List<byte>();
+        private RSocketStreamHandler _streamHandler;
 
-        public IOutboundConnection ConnectionOutbound => this;
+        public new IOutboundConnection ConnectionOutbound => this;
 
-        public TcpDuplexConnection(TcpClient socket)
-            : base(streamIdGenerator: StreamIdGenerator.Create(-1))
+        public TcpDuplexConnection(TcpClient socket) : base(StreamIdGenerator.Create(-1))
         {
             _receiveBuffer = new byte[DataBufferSize];
             _stream = socket.GetStream();
             _stream.BeginRead(_receiveBuffer, 0, DataBufferSize, OnData, null);
-        }
-
-        public void Handle()
-        {
-            throw new NotImplementedException();
         }
 
         private void OnData(IAsyncResult ar)
@@ -51,7 +48,17 @@ namespace RSocket
 
         private void HandleData(byte[] data)
         {
-            throw new NotImplementedException();
+            List<byte> buffer = _remainingBuffer.Concat(data).ToList();
+            int lastOffset = 0;
+
+            List<(RSocketFrame.Frame, int)> frames = RSocketFrameDeserializer.DeserializeFrames(buffer);
+            foreach ((RSocketFrame.Frame frame, int offset) in frames)
+            {
+                lastOffset = offset;
+                Handle(frame);
+            }
+
+            _remainingBuffer = new ArraySegment<byte>(data, lastOffset, data.Length - lastOffset).ToList();
         }
 
         public override void Send(ISerializableFrame<RSocketFrame.Frame> frame)
@@ -75,6 +82,16 @@ namespace RSocket
             {
                 Debug.Log($"Error sending data to server via TCP: {ex}");
             }
-        } 
+        }
+
+        public void ConnectionInBound(Action<RSocketFrame.Frame> handler)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void HandleRequestStream(RSocketStreamHandler handler)
+        {
+            throw new NotImplementedException();
+        }
     }
 }
