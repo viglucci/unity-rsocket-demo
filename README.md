@@ -1,2 +1,4 @@
 # unity-rsocket-net-demo
-Demo/proof of concept using RSocket Net in Unity
+
+Example [RSocket](https://rsocket.io) implementation for [Unity](https://unity.com/).
+
