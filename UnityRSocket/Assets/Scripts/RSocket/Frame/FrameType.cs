@@ -1,6 +1,6 @@
-namespace RSocket
+namespace RSocket.Frame
 {
-    public enum RSocketFrameType
+    public enum FrameType
     {
         RESERVED = 0x00, // Reserved
         SETUP = 0x01, // Setup: Sent by client to initiate protocol processing.

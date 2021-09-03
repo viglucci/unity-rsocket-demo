@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Sockets;
+using RSocket.Frame;
 using UnityEngine;
 
 namespace RSocket
@@ -51,8 +52,8 @@ namespace RSocket
             List<byte> buffer = _remainingBuffer.Concat(data).ToList();
             int lastOffset = 0;
 
-            List<(RSocketFrame.Frame, int)> frames = RSocketFrameDeserializer.DeserializeFrames(buffer);
-            foreach ((RSocketFrame.Frame frame, int offset) in frames)
+            List<(Frame.RSocketFrame.AbstractFrame, int)> frames = FrameDeserializer.DeserializeFrames(buffer);
+            foreach ((Frame.RSocketFrame.AbstractFrame frame, int offset) in frames)
             {
                 lastOffset = offset;
                 Handle(frame);
@@ -61,7 +62,7 @@ namespace RSocket
             _remainingBuffer = new ArraySegment<byte>(data, lastOffset, data.Length - lastOffset).ToList();
         }
 
-        public override void Send(ISerializableFrame<RSocketFrame.Frame> frame)
+        public override void Send(ISerializableFrame<Frame.RSocketFrame.AbstractFrame> frame)
         {
             List<byte> bytes = frame.SerializeLengthPrefixed();
             Send(bytes);
@@ -84,7 +85,7 @@ namespace RSocket
             }
         }
 
-        public void ConnectionInBound(Action<RSocketFrame.Frame> handler)
+        public void ConnectionInBound(Action<Frame.RSocketFrame.AbstractFrame> handler)
         {
             throw new NotImplementedException();
         }

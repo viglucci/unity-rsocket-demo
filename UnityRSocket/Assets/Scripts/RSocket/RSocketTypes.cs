@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using JetBrains.Annotations;
+using RSocket.Frame;
 
 namespace RSocket
 {
@@ -87,21 +88,21 @@ namespace RSocket
 
     public interface IDemultiplexer
     {
-        public void ConnectionInBound(Action<RSocketFrame.Frame> handler);
+        public void ConnectionInBound(Action<Frame.RSocketFrame.AbstractFrame> handler);
 
         public void HandleRequestStream(RSocketStreamHandler handler);
     }
 
     public interface IFrameHandler
     {
-        public void Handle(RSocketFrame.Frame frame);
+        public void Handle(Frame.RSocketFrame.AbstractFrame abstractFrame);
         
         public void Close(Exception error);
     }
 
     public interface IStreamFrameHandler : IFrameHandler
     {
-        RSocketFrameType StreamType { get; }
+        FrameType StreamType { get; }
 
         int StreamId { get; }
     }
@@ -148,6 +149,6 @@ namespace RSocket
 
     public interface IOutboundConnection
     {
-        public void Send(ISerializableFrame<RSocketFrame.Frame> frame);
+        public void Send(ISerializableFrame<Frame.RSocketFrame.AbstractFrame> frame);
     }
 }

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using RSocket.Frame;
 
 namespace RSocket
 {
@@ -59,7 +60,7 @@ namespace RSocket
         private readonly ISubscriber _receiver;
         private IStream _stream;
 
-        public RSocketFrameType StreamType { get; } = RSocketFrameType.REQUEST_RESPONSE;
+        public FrameType StreamType { get; } = FrameType.REQUEST_RESPONSE;
         public int StreamId { get; private set; }
 
         public RequestResponseRequesterStream(IPayload payload, ISubscriber responderStream)
@@ -78,7 +79,7 @@ namespace RSocket
             StreamId = streamId;
             _stream = stream;
 
-            stream.Send(new RSocketFrame.RequestResponseFrame(streamId)
+            stream.Send(new Frame.RSocketFrame.RequestResponseFrame(streamId)
             {
                 Data = _payload.Data,
                 Metadata = _payload.Metadata
@@ -99,21 +100,21 @@ namespace RSocket
             _receiver.OnError(new RSocketError(RSocketErrorCodes.REJECTED, exception.Message));
         }
 
-        public void Handle(RSocketFrame.Frame frame)
+        public void Handle(Frame.RSocketFrame.AbstractFrame abstractFrame)
         {
-            switch (frame.Type)
+            switch (abstractFrame.Type)
             {
-                case RSocketFrameType.PAYLOAD:
+                case FrameType.PAYLOAD:
                 {
-                    HandlePayloadFrame((RSocketFrame.RequestFrame) frame);
+                    HandlePayloadFrame((Frame.RSocketFrame.AbstractRequestFrame) abstractFrame);
                     return;
                 }
-                case RSocketFrameType.ERROR:
+                case FrameType.ERROR:
                 {
-                    HandleErrorFrame((RSocketFrame.ErrorFrame) frame);
+                    HandleErrorFrame((Frame.RSocketFrame.ErrorFrame) abstractFrame);
                     return;
                 }
-                case RSocketFrameType.EXT:
+                case FrameType.EXT:
                 {
                     throw new NotImplementedException();
                     break;
@@ -129,7 +130,7 @@ namespace RSocket
             }
         }
 
-        private void HandleErrorFrame(RSocketFrame.ErrorFrame frame)
+        private void HandleErrorFrame(Frame.RSocketFrame.ErrorFrame abstractFrame)
         {
             _done = true;
 
@@ -137,11 +138,11 @@ namespace RSocket
             _receiver.OnError(new RSocketError(RSocketErrorCodes.REJECTED, "An unexpected error occurred"));
         }
 
-        private void HandlePayloadFrame(RSocketFrame.RequestFrame frame)
+        private void HandlePayloadFrame(Frame.RSocketFrame.AbstractRequestFrame abstractFrame)
         {
-            bool hasComplete = RSocketFlagUtils.HasComplete(frame.Flags);
-            bool hasPayload = RSocketFlagUtils.HasNext(frame.Flags);
-            bool hasFollows = RSocketFlagUtils.HasFollows(frame.Flags);
+            bool hasComplete = RSocketFlagUtils.HasComplete(abstractFrame.Flags);
+            bool hasPayload = RSocketFlagUtils.HasNext(abstractFrame.Flags);
+            bool hasFollows = RSocketFlagUtils.HasFollows(abstractFrame.Flags);
 
             if (hasComplete || !hasFollows)
             {
@@ -157,8 +158,8 @@ namespace RSocket
 
             RSocketPayload payload = new RSocketPayload()
             {
-                Data = frame.Data,
-                Metadata = frame.Metadata
+                Data = abstractFrame.Data,
+                Metadata = abstractFrame.Metadata
             };
 
             _receiver.OnNext(payload, true);
@@ -187,7 +188,7 @@ namespace RSocket
         private readonly IPayload _payload;
         private readonly ISubscriber _receiver;
 
-        public RSocketFrameType StreamType { get; } = RSocketFrameType.REQUEST_FNF;
+        public FrameType StreamType { get; } = FrameType.REQUEST_FNF;
         public int StreamId { get; private set; }
 
         public RequestFnFRequesterHandler(IPayload payload, ISubscriber receiver)
@@ -196,7 +197,7 @@ namespace RSocket
             _receiver = receiver;
         }
 
-        public void Handle(RSocketFrame.Frame frame)
+        public void Handle(Frame.RSocketFrame.AbstractFrame abstractFrame)
         {
             throw new NotImplementedException();
         }
@@ -210,7 +211,7 @@ namespace RSocket
 
             StreamId = streamId;
 
-            stream.Send(new RSocketFrame.RequestFnfFrame(streamId)
+            stream.Send(new Frame.RSocketFrame.RequestFnfFrame(streamId)
             {
                 Data = _payload.Data,
                 Metadata = _payload.Metadata
@@ -247,7 +248,7 @@ namespace RSocket
         private bool _done;
         private IStream _stream;
 
-        public RSocketFrameType StreamType { get; } = RSocketFrameType.REQUEST_STREAM;
+        public FrameType StreamType { get; } = FrameType.REQUEST_STREAM;
         public int StreamId { get; private set; }
 
         public RequestStreamRequesterStream(IPayload payload, ISubscriber receiver, int initialRequestN)
@@ -257,21 +258,21 @@ namespace RSocket
             _initialRequestN = initialRequestN;
         }
         
-        public void Handle(RSocketFrame.Frame frame)
+        public void Handle(Frame.RSocketFrame.AbstractFrame abstractFrame)
         {
-            switch (frame.Type)
+            switch (abstractFrame.Type)
             {
-                case RSocketFrameType.PAYLOAD:
+                case FrameType.PAYLOAD:
                 {
-                    HandlePayloadFrame((RSocketFrame.RequestFrame) frame);
+                    HandlePayloadFrame((Frame.RSocketFrame.AbstractRequestFrame) abstractFrame);
                     return;
                 }
-                case RSocketFrameType.ERROR:
+                case FrameType.ERROR:
                 {
-                    HandleErrorFrame((RSocketFrame.ErrorFrame) frame);
+                    HandleErrorFrame((Frame.RSocketFrame.ErrorFrame) abstractFrame);
                     return;
                 }
-                case RSocketFrameType.EXT:
+                case FrameType.EXT:
                 {
                     throw new NotImplementedException();
                     break;
@@ -287,19 +288,19 @@ namespace RSocket
             }
         }
 
-        private void HandleErrorFrame(RSocketFrame.ErrorFrame frame)
+        private void HandleErrorFrame(Frame.RSocketFrame.ErrorFrame abstractFrame)
         {
             _done = true;
 
             // TODO: get actual error code and message from frame
-            _receiver.OnError(new RSocketError(frame.Code, frame.Message));
+            _receiver.OnError(new RSocketError(abstractFrame.Code, abstractFrame.Message));
         }
 
-        private void HandlePayloadFrame(RSocketFrame.RequestFrame frame)
+        private void HandlePayloadFrame(Frame.RSocketFrame.AbstractRequestFrame abstractFrame)
         {
-            bool hasComplete = RSocketFlagUtils.HasComplete(frame.Flags);
-            bool hasPayload = RSocketFlagUtils.HasNext(frame.Flags);
-            bool hasFollows = RSocketFlagUtils.HasFollows(frame.Flags);
+            bool hasComplete = RSocketFlagUtils.HasComplete(abstractFrame.Flags);
+            bool hasPayload = RSocketFlagUtils.HasNext(abstractFrame.Flags);
+            bool hasFollows = RSocketFlagUtils.HasFollows(abstractFrame.Flags);
 
             if (hasComplete || !hasFollows)
             {
@@ -315,8 +316,8 @@ namespace RSocket
 
             RSocketPayload payload = new RSocketPayload()
             {
-                Data = frame.Data,
-                Metadata = frame.Metadata
+                Data = abstractFrame.Data,
+                Metadata = abstractFrame.Metadata
             };
 
             _receiver.OnNext(payload, hasComplete);
@@ -337,7 +338,7 @@ namespace RSocket
             StreamId = streamId;
             _stream = stream;
             
-            stream.Send(new RSocketFrame.RequestStreamFrame(streamId)
+            stream.Send(new Frame.RSocketFrame.RequestStreamFrame(streamId)
             {
                 Data = _payload.Data,
                 Metadata = _payload.Metadata,

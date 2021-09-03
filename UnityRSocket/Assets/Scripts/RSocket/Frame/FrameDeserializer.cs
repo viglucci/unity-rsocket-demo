@@ -2,15 +2,15 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace RSocket
+namespace RSocket.Frame
 {
-    public class RSocketFrameDeserializer
+    public class FrameDeserializer
     {
         private const int Uint24Size = 3;
 
-        public static List<(RSocketFrame.Frame, int)> DeserializeFrames(List<byte> bytes)
+        public static List<(Frame.RSocketFrame.AbstractFrame, int)> DeserializeFrames(List<byte> bytes)
         {
-            List<(RSocketFrame.Frame, int)> frames = new List<(RSocketFrame.Frame, int)>();
+            List<(Frame.RSocketFrame.AbstractFrame, int)> frames = new List<(Frame.RSocketFrame.AbstractFrame, int)>();
             int offset = 0;
             while (offset + Uint24Size < bytes.Count)
             {
@@ -24,15 +24,15 @@ namespace RSocket
                 }
 
                 List<byte> frameBuffer = bytes.GetRange(frameStart, frameLength);
-                RSocketFrame.Frame frame = DeserializeFrame(frameBuffer);
+                Frame.RSocketFrame.AbstractFrame abstractFrame = DeserializeFrame(frameBuffer);
                 offset = frameEnd;
-                frames.Add((frame, offset));
+                frames.Add((abstractFrame, offset));
             }
 
             return frames;
         }
 
-        private static RSocketFrame.Frame DeserializeFrame(List<byte> frameBuffer)
+        private static Frame.RSocketFrame.AbstractFrame DeserializeFrame(List<byte> frameBuffer)
         {
             int offset = 0;
             (int value, int nextOffset) streamId = BufferUtils.ReadUInt32BigEndian(frameBuffer, offset);
@@ -41,18 +41,18 @@ namespace RSocket
             int type = (int)((uint)typeAndFlags.value >> RSocketFlagUtils.FrameTypeOffset);
             int flags = typeAndFlags.value & RSocketFlagUtils.FlagsMask;
             offset = typeAndFlags.nextOffset;
-            switch ((RSocketFrameType)type)
+            switch ((FrameType)type)
             {
-                case RSocketFrameType.PAYLOAD:
+                case FrameType.PAYLOAD:
                     return DeserializePayloadFrame(frameBuffer, streamId.value, flags, offset);
-                case RSocketFrameType.ERROR:
+                case FrameType.ERROR:
                     return DeserializeErrorFrame(frameBuffer, streamId.value, flags, offset);
                 default:
                     throw new NotImplementedException();
             }
         }
 
-        private static RSocketFrame.Frame DeserializeErrorFrame(List<byte> frameBuffer, int streamId, int flags, int offset)
+        private static Frame.RSocketFrame.AbstractFrame DeserializeErrorFrame(List<byte> frameBuffer, int streamId, int flags, int offset)
         {
             (int value, int nextOffset) code = BufferUtils.ReadUInt32BigEndian(frameBuffer, offset);
             offset = code.nextOffset;
@@ -64,10 +64,10 @@ namespace RSocket
                 message = Encoding.UTF8.GetString(messageBytes);
             }
 
-            return new RSocketFrame.ErrorFrame(streamId, code.value, message);
+            return new Frame.RSocketFrame.ErrorFrame(streamId, code.value, message);
         }
 
-        private static RSocketFrame.Frame DeserializePayloadFrame(
+        private static Frame.RSocketFrame.AbstractFrame DeserializePayloadFrame(
             List<byte> frameBuffer,
             int streamId,
             int flags,
@@ -92,7 +92,7 @@ namespace RSocket
                 data = frameBuffer.GetRange(offset, frameBuffer.Count - offset);
             }
 
-            return new RSocketFrame.PayloadFrame(streamId)
+            return new Frame.RSocketFrame.PayloadFrame(streamId)
             {
                 Flags = (ushort)flags,
                 Metadata = metadata,

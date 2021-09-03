@@ -44,7 +44,7 @@ namespace RSocket
     public class RSocketConnector
     {
         private readonly IClientTransport _clientTransport;
-        private readonly RSocketFrame.SetupFrame _setupFrame;
+        private readonly Frame.RSocketFrame.SetupFrame _setupAbstractFrame;
 
         public RSocketConnector(
             IClientTransport clientTransport,
@@ -56,7 +56,7 @@ namespace RSocket
                 ? RSocketFlagType.METADATA
                 : RSocketFlagType.NONE);
 
-            _setupFrame = new RSocketFrame.SetupFrame(0)
+            _setupAbstractFrame = new Frame.RSocketFrame.SetupFrame(0)
             {
                 Data = setupOptions.Data,
                 DataMimeType = setupOptions.DataMimeType,
@@ -89,7 +89,7 @@ namespace RSocket
                 // connection.HandleRequestStream(streamsHandler);
                 
                 Debug.Log("Sending SETUP frame...");
-                connection.ConnectionOutbound.Send(_setupFrame);
+                connection.ConnectionOutbound.Send(_setupAbstractFrame);
 
                 onBound(new RSocketRequester(connection));
             });

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using RSocket.Frame;
 using UnityEngine;
 
 namespace RSocket
@@ -18,35 +19,35 @@ namespace RSocket
             _streamIdGenerator = streamIdGenerator;
         }
 
-        protected void Handle(RSocketFrame.Frame frame)
+        protected void Handle(Frame.RSocketFrame.AbstractFrame abstractFrame)
         {
-            if (frame.Type == RSocketFrameType.RESERVED)
+            if (abstractFrame.Type == FrameType.RESERVED)
             {
                 // TODO: throw
                 return;
             }
 
-            if (RSocketFrameUtils.IsConnectionFrame(frame))
+            if (FrameUtils.IsConnectionFrame(abstractFrame))
             {
                 // TODO: Connection stream handling
                 throw new NotImplementedException();
             }
 
-            if (RSocketFrameUtils.IsRequestFrame(frame))
+            if (FrameUtils.IsRequestFrame(abstractFrame))
             {
                 // TODO: Request stream handling
                 throw new NotImplementedException();
             }
 
-            _streamFrameHandlers.TryGetValue(frame.StreamId, out IStreamFrameHandler handler);
+            _streamFrameHandlers.TryGetValue(abstractFrame.StreamId, out IStreamFrameHandler handler);
 
             if (handler == null)
             {
-                Debug.LogWarning($"Failed to find handler for unknown stream {frame.StreamId} for frame type ${frame.Type}.");
+                Debug.LogWarning($"Failed to find handler for unknown stream {abstractFrame.StreamId} for frame type ${abstractFrame.Type}.");
                 return;
             }
             
-            handler.Handle(frame);
+            handler.Handle(abstractFrame);
         }
         
         public void CreateRequestStream(IStreamFrameStreamLifecyleHandler streamHandler)
@@ -64,6 +65,6 @@ namespace RSocket
             }, _streamFrameHandlers.Keys.ToList());
         }
         
-        public abstract void Send(ISerializableFrame<RSocketFrame.Frame> frame);
+        public abstract void Send(ISerializableFrame<Frame.RSocketFrame.AbstractFrame> frame);
     }
 }
