@@ -1,0 +1,7 @@
+{
+    "name": "io.rsocket",
+    "version": "0.1.0",
+    "description": "Application protocol providing Reactive Streams semantics",
+    "displayName": "RSocket",
+    "unity": "2018.3"
+}

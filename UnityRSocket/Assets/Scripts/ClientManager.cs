@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-using System.Threading.Tasks;
 using RSocket;
 using UnityEngine;
 
@@ -38,7 +37,7 @@ public class ClientManager : MonoBehaviour
         RSocketConnector connector = new RSocketConnector(transport, setupOptions);
 
         Exception connectionException = null;
-        
+
         try
         {
             _rSocket = await connector.Bind();
@@ -50,9 +49,9 @@ public class ClientManager : MonoBehaviour
         }
 
         if (connectionException != null) return;
-        
+
         Debug.Log("RSocket requester bound");
-        
+
         OnRSocketConnected();
     }
 
@@ -67,7 +66,7 @@ public class ClientManager : MonoBehaviour
                 () => Debug.Log("FireAndForget done"),
                 Debug.LogError
             ));
-        
+
         _rSocket.RequestResponse(new RSocketPayload
             {
                 Data = new List<byte>(Encoding.ASCII.GetBytes("PING"))
@@ -77,11 +76,11 @@ public class ClientManager : MonoBehaviour
                 {
                     string decodedData = Encoding.UTF8.GetString(payload.Data.ToArray());
                     string decodedMetadata = Encoding.UTF8.GetString(payload.Metadata.ToArray());
-        
+
                     Debug.Log($"[data: {decodedData}, " +
                               $"metadata: {decodedMetadata}, " +
                               $"isComplete: {isComplete}]");
-        
+
                     if (isComplete)
                     {
                         Debug.Log("RequestResponse done");
@@ -111,10 +110,7 @@ public class ClientManager : MonoBehaviour
                     }
                 },
                 () => Debug.Log("RequestStream done"),
-                (error) =>
-                {
-                    Debug.LogError($"[code: {error.Code}, message: {error.Message}]", this);
-                }
+                (error) => { Debug.LogError($"[code: {error.Code}, message: {error.Message}]", this); }
             ),
             100);
     }
