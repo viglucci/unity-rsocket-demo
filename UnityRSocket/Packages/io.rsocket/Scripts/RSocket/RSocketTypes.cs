@@ -89,14 +89,14 @@ namespace RSocket
 
     public interface IDemultiplexer
     {
-        public void ConnectionInBound(Action<Frame.RSocketFrame.AbstractFrame> handler);
+        public void ConnectionInBound(Action<RSocketFrame.AbstractFrame> handler);
 
         public void HandleRequestStream(RSocketStreamHandler handler);
     }
 
     public interface IFrameHandler
     {
-        public void Handle(Frame.RSocketFrame.AbstractFrame abstractFrame);
+        public void Handle(RSocketFrame.AbstractFrame abstractFrame);
         
         public void Close(Exception error);
     }
@@ -150,6 +150,6 @@ namespace RSocket
 
     public interface IOutboundConnection
     {
-        public void Send(ISerializableFrame<Frame.RSocketFrame.AbstractFrame> frame);
+        public void Send(ISerializableFrame<RSocketFrame.AbstractFrame> frame);
     }
 }

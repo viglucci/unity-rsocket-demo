@@ -19,7 +19,7 @@ namespace RSocket
             _streamIdGenerator = streamIdGenerator;
         }
 
-        protected void Handle(Frame.RSocketFrame.AbstractFrame abstractFrame)
+        protected void Handle(RSocketFrame.AbstractFrame abstractFrame)
         {
             if (abstractFrame.Type == FrameType.RESERVED)
             {
@@ -65,6 +65,6 @@ namespace RSocket
             }, _streamFrameHandlers.Keys.ToList());
         }
         
-        public abstract void Send(ISerializableFrame<Frame.RSocketFrame.AbstractFrame> frame);
+        public abstract void Send(ISerializableFrame<RSocketFrame.AbstractFrame> frame);
     }
 }
