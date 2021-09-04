@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Sockets;
@@ -52,11 +53,13 @@ namespace RSocket
             List<byte> buffer = _remainingBuffer.Concat(data).ToList();
             int lastOffset = 0;
 
-            List<(RSocketFrame.AbstractFrame, int)> frames = FrameDeserializer.DeserializeFrames(buffer);
-            foreach ((RSocketFrame.AbstractFrame frame, int offset) in frames)
+            IEnumerator<(RSocketFrame.AbstractFrame frame, int offset)> frames
+                = FrameDeserializer.DeserializeFrames(buffer);
+
+            while (frames.MoveNext())
             {
-                lastOffset = offset;
-                Handle(frame);
+                lastOffset = frames.Current.offset;
+                Handle(frames.Current.frame);
             }
 
             _remainingBuffer = new ArraySegment<byte>(data, lastOffset, data.Length - lastOffset).ToList();

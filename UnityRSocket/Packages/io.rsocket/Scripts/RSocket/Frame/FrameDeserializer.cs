@@ -8,9 +8,8 @@ namespace RSocket.Frame
     {
         private const int Uint24Size = 3;
 
-        public static List<(RSocketFrame.AbstractFrame, int)> DeserializeFrames(List<byte> bytes)
+        public static IEnumerator<(RSocketFrame.AbstractFrame frame, int offset)> DeserializeFrames(List<byte> bytes)
         {
-            List<(RSocketFrame.AbstractFrame, int)> frames = new List<(RSocketFrame.AbstractFrame, int)>();
             int offset = 0;
             while (offset + Uint24Size < bytes.Count)
             {
@@ -20,16 +19,14 @@ namespace RSocket.Frame
                 if (frameEnd > bytes.Count)
                 {
                     // not all bytes of next frame received
-                    break;
+                    yield break;
                 }
-
+            
                 List<byte> frameBuffer = bytes.GetRange(frameStart, frameLength);
                 RSocketFrame.AbstractFrame abstractFrame = DeserializeFrame(frameBuffer);
                 offset = frameEnd;
-                frames.Add((abstractFrame, offset));
+                yield return (abstractFrame, offset);
             }
-
-            return frames;
         }
 
         private static RSocketFrame.AbstractFrame DeserializeFrame(List<byte> frameBuffer)
@@ -52,7 +49,8 @@ namespace RSocket.Frame
             }
         }
 
-        private static RSocketFrame.AbstractFrame DeserializeErrorFrame(List<byte> frameBuffer, int streamId, int flags, int offset)
+        private static RSocketFrame.AbstractFrame DeserializeErrorFrame(List<byte> frameBuffer, int streamId, int flags,
+            int offset)
         {
             (int value, int nextOffset) code = BufferUtils.ReadUInt32BigEndian(frameBuffer, offset);
             offset = code.nextOffset;
