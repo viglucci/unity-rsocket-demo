@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Text;
 using RSocket;
@@ -57,17 +58,17 @@ public class ClientManager : MonoBehaviour
 
     private void OnRSocketConnected()
     {
-        _rSocket.FireAndForget(new RSocketPayload
-            {
-                Data = new List<byte>(Encoding.ASCII.GetBytes("PING"))
-            },
-            new Subscriber(
-                (payload, isComplete) => throw new NotImplementedException(),
-                () => Debug.Log("FireAndForget done"),
-                Debug.LogError
-            ));
+        // _rSocket.FireAndForget(new RSocketPayload
+        //     {
+        //         Data = new List<byte>(Encoding.ASCII.GetBytes("PING"))
+        //     },
+        //     new Subscriber(
+        //         (payload, isComplete) => throw new NotImplementedException(),
+        //         () => Debug.Log("FireAndForget done"),
+        //         Debug.LogError
+        //     ));
 
-        _rSocket.RequestResponse(new RSocketPayload
+        ICancellable cancellable = _rSocket.RequestResponse(new RSocketPayload
             {
                 Data = new List<byte>(Encoding.ASCII.GetBytes("PING"))
             },
@@ -90,28 +91,41 @@ public class ClientManager : MonoBehaviour
                 Debug.LogError
             ));
 
-        _rSocket.RequestStream(new RSocketPayload
-            {
-                Data = new List<byte>(Encoding.ASCII.GetBytes("PING"))
-            },
-            new Subscriber(
-                (payload, isComplete) =>
-                {
-                    string decodedData = Encoding.UTF8.GetString(payload.Data.ToArray());
-                    string decodedMetadata = Encoding.UTF8.GetString(payload.Metadata.ToArray());
+        StartCoroutine(DoAfterSeconds(1.0f, () =>
+        {
+            Debug.Log("Canceling request response...");
+            cancellable.Cancel();
+        }));
 
-                    Debug.Log($"[data: {decodedData}, " +
-                              $"metadata: {decodedMetadata}, " +
-                              $"isComplete: {isComplete}]");
+        // _rSocket.RequestStream(new RSocketPayload
+        //     {
+        //         Data = new List<byte>(Encoding.ASCII.GetBytes("PING"))
+        //     },
+        //     new Subscriber(
+        //         (payload, isComplete) =>
+        //         {
+        //             string decodedData = Encoding.UTF8.GetString(payload.Data.ToArray());
+        //             string decodedMetadata = Encoding.UTF8.GetString(payload.Metadata.ToArray());
+        //
+        //             Debug.Log($"[data: {decodedData}, " +
+        //                       $"metadata: {decodedMetadata}, " +
+        //                       $"isComplete: {isComplete}]");
+        //
+        //             if (isComplete)
+        //             {
+        //                 Debug.Log("RequestStream done");
+        //             }
+        //         },
+        //         () => Debug.Log("RequestStream done"),
+        //         (error) => { Debug.LogError($"[code: {error.Code}, message: {error.Message}]", this); }
+        //     ),
+        //     100);
+    }
 
-                    if (isComplete)
-                    {
-                        Debug.Log("RequestStream done");
-                    }
-                },
-                () => Debug.Log("RequestStream done"),
-                (error) => { Debug.LogError($"[code: {error.Code}, message: {error.Message}]", this); }
-            ),
-            100);
+    private IEnumerator DoAfterSeconds(float seconds, Action callback)
+    {
+        yield return new WaitForSeconds(seconds);
+        
+        callback.Invoke();
     }
 }

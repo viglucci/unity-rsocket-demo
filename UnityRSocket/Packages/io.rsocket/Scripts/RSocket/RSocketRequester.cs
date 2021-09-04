@@ -172,7 +172,14 @@ namespace RSocket
 
         public void Cancel()
         {
-            throw new NotImplementedException();
+            if (_done)
+            {
+                return;
+            }
+
+            _done = true;
+            
+            _stream.Send(new RSocketFrame.CancelFrame(StreamId));
         }
 
         public void Close(Exception error)
