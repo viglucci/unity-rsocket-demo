@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using JetBrains.Annotations;
 using RSocket.Frame;
 
@@ -72,7 +73,7 @@ namespace RSocket
 
     public interface IClientTransport
     {
-        public void Connect(Action<IDuplexConnection, Exception> callback);
+        public Task<IDuplexConnection> Connect();
     }
 
     public interface IDuplexConnection : ICloseable, IMultiplexer, IDemultiplexer

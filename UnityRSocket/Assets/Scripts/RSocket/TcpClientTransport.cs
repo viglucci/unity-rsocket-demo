@@ -1,5 +1,6 @@
 using System;
 using System.Net.Sockets;
+using System.Threading.Tasks;
 using UnityEngine;
 
 namespace RSocket
@@ -16,43 +17,18 @@ namespace RSocket
             _port = port;
         }
 
-        public void Connect(Action<IDuplexConnection, Exception> callback)
+        public async Task<IDuplexConnection> Connect()
         {
             _socket = new TcpClient()
             {
                 ReceiveBufferSize = TcpDuplexConnection.DataBufferSize,
                 SendBufferSize = TcpDuplexConnection.DataBufferSize
             };
-
-            _socket.BeginConnect(_host, _port, ar =>
-            {
-                Exception ex = null;
-                
-                try
-                {
-                    _socket.EndConnect(ar);
-                    
-                    if (!_socket.Connected)
-                    {
-                        return;
-                    }
-                }
-                catch(Exception e)
-                {
-                    Debug.LogError($"Failed to connect on TCP: {e}");
-                    ex = e;
-                }
-
-                if (ex != null)
-                {
-                    callback(null, ex);
-                }
-                else
-                {
-                    TcpDuplexConnection connection = new TcpDuplexConnection(_socket);
-                    callback(connection, null);
-                }
-            }, _socket);
+            
+            IAsyncResult asyncResult = _socket.BeginConnect(_host, _port, (ar) => {}, _socket);
+            await Task.Factory.FromAsync(asyncResult, _socket.EndConnect);
+            
+            return new TcpDuplexConnection(_socket);
         }
     }
 }

@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using UnityEngine;
 
 namespace RSocket
@@ -70,31 +71,22 @@ namespace RSocket
             };
         }
 
-        public IEnumerator Bind(Action<IRSocket> onBound)
+        public async Task<RSocketRequester> Bind()
         {
-            _clientTransport.Connect((connection, exception) =>
-            {
-                if (exception != null)
-                {
-                    Debug.LogError(exception);
-                    return;
-                }
+            IDuplexConnection connection = await _clientTransport.Connect();
+            
+            Debug.Log("Transport connected...");
 
-                Debug.Log("Transport connected...");
-
-                // ConnectionFrameHandler connectionFrameHandler = new ConnectionFrameHandler(connection);
-                // connection.ConnectionInBound(connectionFrameHandler);
+            // ConnectionFrameHandler connectionFrameHandler = new ConnectionFrameHandler(connection);
+            // connection.ConnectionInBound(connectionFrameHandler);
                 
-                // var streamsHandler = new RSocketStreamHandler();
-                // connection.HandleRequestStream(streamsHandler);
+            // var streamsHandler = new RSocketStreamHandler();
+            // connection.HandleRequestStream(streamsHandler);
                 
-                Debug.Log("Sending SETUP frame...");
-                connection.ConnectionOutbound.Send(_setupAbstractFrame);
+            Debug.Log("Sending SETUP frame...");
+            connection.ConnectionOutbound.Send(_setupAbstractFrame);
 
-                onBound(new RSocketRequester(connection));
-            });
-
-            yield return null;
+            return new RSocketRequester(connection);
         }
     }
 }

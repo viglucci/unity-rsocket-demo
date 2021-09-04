@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading.Tasks;
 using RSocket;
 using UnityEngine;
 
@@ -26,7 +27,7 @@ public class ClientManager : MonoBehaviour
         }
     }
 
-    private void Start()
+    private async void Start()
     {
         IClientTransport transport = new TcpClientTransport(host, port);
         SetupOptions setupOptions = new SetupOptions(
@@ -36,13 +37,23 @@ public class ClientManager : MonoBehaviour
             metadata: new List<byte>(Encoding.ASCII.GetBytes("This could also be anything")));
         RSocketConnector connector = new RSocketConnector(transport, setupOptions);
 
-        StartCoroutine(connector.Bind(rsocket =>
+        Exception connectionException = null;
+        
+        try
         {
-            Debug.Log("RSocket requester bound");
-            _rSocket = rsocket;
+            _rSocket = await connector.Bind();
+        }
+        catch (Exception e)
+        {
+            Debug.LogError(e);
+            connectionException = e;
+        }
 
-            OnRSocketConnected();
-        }));
+        if (connectionException != null) return;
+        
+        Debug.Log("RSocket requester bound");
+        
+        OnRSocketConnected();
     }
 
     private void OnRSocketConnected()
