@@ -1,7 +1,13 @@
 {
-    "name": "io.rsocket",
+    "name": "io.rsocket.unity",
     "version": "0.1.0",
     "description": "Application protocol providing Reactive Streams semantics",
     "displayName": "RSocket",
-    "unity": "2018.3"
+    "unity": "2018.3",
+    "keywords": ["library", "networking", "platform", "tcp", "websocket", "binary"],
+    "author": {
+        "email": "kviglucci@gmail.com",
+        "name": "Kevin Viglucci",
+        "url": "https://viglucci.io"
+    }
 }
