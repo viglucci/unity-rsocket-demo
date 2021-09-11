@@ -115,7 +115,7 @@
         "com.unity.modules.imgui": "1.0.0"
       }
     },
-    "io.rsocket": {
+    "io.rsocket.unity": {
       "version": "file:io.rsocket",
       "depth": 0,
       "source": "embedded",
