@@ -25,17 +25,22 @@
 
 ## Examples
 
-### Create a RSocket connection
+### Create an RSocket connector
 
 ```c#
 private async void Start()
 {
+    string host = "tcp://localhost";
+    int port = "9090";
+
     IClientTransport transport = new TcpClientTransport(host, port);
+    
     SetupOptions setupOptions = new SetupOptions(
         keepAlive: 60000,
         lifetime: 300000,
         data: new List<byte>(Encoding.ASCII.GetBytes("{\"key\": \"value\"}")),
         metadata: new List<byte>(Encoding.ASCII.GetBytes("{\"key\": \"value\"}")));
+    
     RSocketConnector connector = new RSocketConnector(transport, setupOptions);
 
     Exception connectionException = null;
