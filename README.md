@@ -139,4 +139,4 @@ Memory allocation has not been profiled for performance consideration. Frame cre
 
 ### Keep Alive
 
-The client implementation does not current send or respond to keep alive messaes. As such, a properly written server will terminate the connection after the configured keepalive values provided in the setup payload.
+The client implementation does not currently send or respond to keep alive messages. As such, a properly written server will terminate the connection after the configured period provided in the setup payload has passed.
