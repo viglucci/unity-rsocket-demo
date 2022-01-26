@@ -14,6 +14,7 @@
 - ❌ Leasing
 - ❌ Resumability
 - ❌ Composite Metadata
+- ❌ Keepalive
 
 ### Request Models
 
