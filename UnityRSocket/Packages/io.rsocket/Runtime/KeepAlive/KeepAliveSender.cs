@@ -1,7 +1,4 @@
-using System;
-using System.Collections;
 using RSocket.Frame;
-using UnityEngine;
 
 namespace RSocket.KeepAlive
 {
@@ -9,32 +6,22 @@ namespace RSocket.KeepAlive
     {
         private readonly IOutboundConnection _outboundConnection;
         private readonly int _keepAlivePeriodDurationMillis;
-        private readonly MonoBehaviour _monoBehaviour;
+        private readonly IScheduler _scheduler;
 
         public KeepAliveSender(
             IOutboundConnection outboundConnection,
             int keepAlivePeriodDurationMillis,
-            MonoBehaviour monoBehaviour)
+            IScheduler scheduler)
         {
             _outboundConnection = outboundConnection;
             _keepAlivePeriodDurationMillis = keepAlivePeriodDurationMillis;
-            _monoBehaviour = monoBehaviour;
+            _scheduler = scheduler;
         }
 
         public void Start()
         {
-            SendKeepAlive();
-            ScheduleFrame();
-        }
-
-        private void ScheduleFrame()
-        {
             int timeSeconds = _keepAlivePeriodDurationMillis / 1000;
-            _monoBehaviour.StartCoroutine(DoAfterSeconds(timeSeconds, () =>
-            {
-                SendKeepAlive();
-                ScheduleFrame();
-            }));
+            _scheduler.StartInterval(timeSeconds, SendKeepAlive);
         }
 
         private void SendKeepAlive()
@@ -44,13 +31,6 @@ namespace RSocket.KeepAlive
                 Flags = (ushort)RSocketFlagType.RESPOND
             };
             _outboundConnection.Send(keepAliveFrame);
-        }
-
-        private IEnumerator DoAfterSeconds(float seconds, Action callback)
-        {
-            yield return new WaitForSeconds(seconds);
-
-            callback.Invoke();
         }
     }
 }

@@ -42,7 +42,7 @@ public class ClientManager : MonoBehaviour
         RSocketConnector connector = new RSocketConnector(
             transport,
             setupOptions,
-            this  
+            new MonoBehaviorScheduler(this)
         );
 
         Exception connectionException = null;

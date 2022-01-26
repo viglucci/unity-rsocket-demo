@@ -46,16 +46,16 @@ namespace RSocket
     public class RSocketConnector
     {
         private readonly IClientTransport _clientTransport;
-        private readonly MonoBehaviour _monoBehaviour;
+        private readonly IScheduler _scheduler;
         private readonly Frame.RSocketFrame.SetupFrame _setupAbstractFrame;
 
         public RSocketConnector(
             IClientTransport clientTransport,
             SetupOptions setupOptions,
-            MonoBehaviour monoBehaviour)
+            IScheduler scheduler)
         {
             _clientTransport = clientTransport;
-            _monoBehaviour = monoBehaviour;
+            _scheduler = scheduler;
 
             ushort metaDataFlag = (ushort)(setupOptions.Metadata != null
                 ? RSocketFlagType.METADATA
@@ -93,7 +93,7 @@ namespace RSocket
             KeepAliveSender keepAliveSender = new KeepAliveSender(
                 connection.ConnectionOutbound,
                 _setupAbstractFrame.KeepAlive,
-                _monoBehaviour);
+                _scheduler);
             
             keepAliveSender.Start();
 
