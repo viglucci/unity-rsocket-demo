@@ -21,7 +21,7 @@ namespace RSocket.Frame
                     // not all bytes of next frame received
                     yield break;
                 }
-            
+
                 List<byte> frameBuffer = bytes.GetRange(frameStart, frameLength);
                 RSocketFrame.AbstractFrame abstractFrame = DeserializeFrame(frameBuffer);
                 offset = frameEnd;
@@ -76,18 +76,25 @@ namespace RSocket.Frame
 
             if (RSocketFlagUtils.HasMetadata(flags))
             {
-                (int value, int nextOffset) metadataLength = BufferUtils.ReadUInt24BigEndian(frameBuffer, offset);
+                (int value, int nextOffset) metadataLength
+                    = BufferUtils.ReadUInt24BigEndian(frameBuffer, offset);
+
                 offset = metadataLength.nextOffset;
+
                 if (metadataLength.value > 0)
                 {
-                    metadata = frameBuffer.GetRange(offset, offset + metadataLength.value);
+                    metadata = frameBuffer.GetRange(
+                        offset,
+                        offset + metadataLength.value);
                     offset += metadataLength.value;
                 }
             }
 
             if (offset < frameBuffer.Count)
             {
-                data = frameBuffer.GetRange(offset, frameBuffer.Count - offset);
+                data = frameBuffer.GetRange(
+                    offset,
+                    frameBuffer.Count - offset);
             }
 
             return new RSocketFrame.PayloadFrame(streamId)

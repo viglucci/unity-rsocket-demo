@@ -44,7 +44,7 @@ namespace RSocket
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex);
+                Debug.LogError(ex);
             }
         }
 

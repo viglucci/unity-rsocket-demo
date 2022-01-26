@@ -117,7 +117,6 @@ namespace RSocket
                 case FrameType.EXT:
                 {
                     throw new NotImplementedException();
-                    break;
                 }
                 default:
                 {
@@ -282,7 +281,6 @@ namespace RSocket
                 case FrameType.EXT:
                 {
                     throw new NotImplementedException();
-                    break;
                 }
                 default:
                 {

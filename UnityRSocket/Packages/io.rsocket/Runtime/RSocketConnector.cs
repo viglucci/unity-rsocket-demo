@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using RSocket.KeepAlive;
 using UnityEngine;
 
 namespace RSocket
@@ -45,15 +46,18 @@ namespace RSocket
     public class RSocketConnector
     {
         private readonly IClientTransport _clientTransport;
+        private readonly MonoBehaviour _monoBehaviour;
         private readonly Frame.RSocketFrame.SetupFrame _setupAbstractFrame;
 
         public RSocketConnector(
             IClientTransport clientTransport,
-            SetupOptions setupOptions)
+            SetupOptions setupOptions,
+            MonoBehaviour monoBehaviour)
         {
             _clientTransport = clientTransport;
+            _monoBehaviour = monoBehaviour;
 
-            ushort metaDataFlag = (ushort) (setupOptions.Metadata != null
+            ushort metaDataFlag = (ushort)(setupOptions.Metadata != null
                 ? RSocketFlagType.METADATA
                 : RSocketFlagType.NONE);
 
@@ -74,17 +78,24 @@ namespace RSocket
         public async Task<RSocketRequester> Bind()
         {
             IDuplexConnection connection = await _clientTransport.Connect();
-            
+
             Debug.Log("Transport connected...");
 
             // ConnectionFrameHandler connectionFrameHandler = new ConnectionFrameHandler(connection);
             // connection.ConnectionInBound(connectionFrameHandler);
-                
+
             // var streamsHandler = new RSocketStreamHandler();
             // connection.HandleRequestStream(streamsHandler);
-                
+
             Debug.Log("Sending SETUP frame...");
             connection.ConnectionOutbound.Send(_setupAbstractFrame);
+
+            KeepAliveSender keepAliveSender = new KeepAliveSender(
+                connection.ConnectionOutbound,
+                _setupAbstractFrame.KeepAlive,
+                _monoBehaviour);
+            
+            keepAliveSender.Start();
 
             return new RSocketRequester(connection);
         }

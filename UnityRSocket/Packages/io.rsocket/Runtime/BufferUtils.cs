@@ -1,10 +1,23 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 
 namespace RSocket
 {
     public static class BufferUtils
     {
+        public static void WriteUInt64BigEndian(List<byte> target, Int64 value)
+        {
+            byte[] bytes = BitConverter.GetBytes(value);
+
+            if (BitConverter.IsLittleEndian)
+            {
+                Array.Reverse(bytes);
+            }
+
+            target.AddRange(bytes);
+        }
+        
         public static void WriteUInt32BigEndian(List<byte> target, Int32 value)
         {
             byte[] bytes = BitConverter.GetBytes(value);
