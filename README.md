@@ -136,3 +136,7 @@ Library has not been performance profiled. Hot paths may not be optimized.
 ### Memory Usage
 
 Memory allocation has not been profiled for performance consideration. Frame creation implementation required additional work to prevent wasteful memory allocation.
+
+### Keep Alive
+
+The client implementation does not current send or respond to keep alive messaes. As such, a properly written server will terminate the connection after the configured keepalive values provided in the setup payload.
