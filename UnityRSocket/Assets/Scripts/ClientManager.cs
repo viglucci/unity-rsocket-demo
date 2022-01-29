@@ -30,7 +30,7 @@ public class ClientManager : MonoBehaviour
     {
         IClientTransport transport = new TcpClientTransport(host, port);
         SetupOptions setupOptions = new SetupOptions(
-            keepAlive: 1_000, // 30 seconds
+            keepAlive: 30_000, // 30 seconds
             lifetime: 300_000, // 5 minutes
             data: new List<byte>(),
             metadata: new List<byte>()
