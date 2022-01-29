@@ -1,5 +1,4 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using RSocket;
 using UnityEngine;
@@ -41,7 +40,7 @@ public class ClientManager : MonoBehaviour
             transport,
             setupOptions,
             new MonoBehaviorScheduler());
-        
+
         try
         {
             _rSocket = await connector.Bind();
@@ -51,7 +50,7 @@ public class ClientManager : MonoBehaviour
             Debug.LogError(e);
             return;
         }
-        
+
         Debug.Log("RSocket requester bound");
 
         OnRSocketConnected();
@@ -64,7 +63,7 @@ public class ClientManager : MonoBehaviour
             Debug.Log("RSocket connection closed.");
             Debug.LogError(ex);
         });
-        
+
         // ICancellable cancellable = _rSocket.RequestResponse(new RSocketPayload
         //     {
         //         Data = new List<byte>(Encoding.ASCII.GetBytes("PING"))
