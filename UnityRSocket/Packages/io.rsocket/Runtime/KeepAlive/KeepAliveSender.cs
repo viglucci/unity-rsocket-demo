@@ -1,12 +1,14 @@
+using System.Threading;
 using RSocket.Frame;
 
 namespace RSocket.KeepAlive
 {
-    public class KeepAliveSender
+    public class KeepAliveSender : Deferred
     {
         private readonly IOutboundConnection _outboundConnection;
         private readonly int _keepAlivePeriodDurationMillis;
         private readonly IScheduler _scheduler;
+        private int _currentIntervalId;
 
         public KeepAliveSender(
             IOutboundConnection outboundConnection,
@@ -21,16 +23,17 @@ namespace RSocket.KeepAlive
         public void Start()
         {
             int timeSeconds = _keepAlivePeriodDurationMillis / 1000;
-            _scheduler.StartInterval(timeSeconds, SendKeepAlive);
+            _currentIntervalId = _scheduler.StartInterval(timeSeconds, SendKeepAlive);
+            OnClose(_ => _scheduler.Clear(_currentIntervalId));
         }
 
         private void SendKeepAlive()
         {
-            RSocketFrame.KeepAliveFrame keepAliveFrame = new RSocketFrame.KeepAliveFrame(0)
+            if (Done) return;
+            _outboundConnection.Send(new RSocketFrame.KeepAliveFrame(0)
             {
                 Flags = (ushort)RSocketFlagType.RESPOND
-            };
-            _outboundConnection.Send(keepAliveFrame);
+            });
         }
     }
 }

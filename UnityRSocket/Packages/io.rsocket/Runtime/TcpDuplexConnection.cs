@@ -1,5 +1,4 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Sockets;
@@ -10,17 +9,18 @@ namespace RSocket
 {
     public class TcpDuplexConnection : ClientServerInputMultiplexerDemultiplexer, IDuplexConnection
     {
+        private readonly TcpClient _socket;
         public static int DataBufferSize = 4096;
 
         private readonly NetworkStream _stream;
         private readonly byte[] _receiveBuffer;
         private List<byte> _remainingBuffer = new List<byte>();
-        private RSocketStreamHandler _streamHandler;
 
         public new IOutboundConnection ConnectionOutbound => this;
 
         public TcpDuplexConnection(TcpClient socket) : base(StreamIdGenerator.Create(-1))
         {
+            _socket = socket;
             _receiveBuffer = new byte[DataBufferSize];
             _stream = socket.GetStream();
             _stream.BeginRead(_receiveBuffer, 0, DataBufferSize, OnData, null);
@@ -44,7 +44,7 @@ namespace RSocket
             }
             catch (Exception ex)
             {
-                Debug.LogError(ex);
+                Close(ex);
             }
         }
 
@@ -77,25 +77,32 @@ namespace RSocket
             {
                 void AsyncCallback(IAsyncResult ar)
                 {
-                    _stream.EndWrite(ar);
+                    try
+                    {
+                        _stream.EndWrite(ar);
+                    }
+                    catch (Exception ex)
+                    {
+                        HandleConnectionError(ex);
+                    }
                 }
 
                 _stream.BeginWrite(bytes.ToArray(), 0, bytes.Count, AsyncCallback, null);
             }
             catch (Exception ex)
             {
-                Debug.Log($"Error sending data to server via TCP: {ex}");
+                HandleConnectionError(ex);
             }
-        }
-
-        public void ConnectionInBound(Action<RSocketFrame.AbstractFrame> handler)
-        {
-            throw new NotImplementedException();
         }
 
         public void HandleRequestStream(RSocketStreamHandler handler)
         {
             throw new NotImplementedException();
+        }
+
+        public void HandleConnectionError(Exception exception)
+        {
+            Close(new Exception("TCP connection error: " + exception.Message));
         }
     }
 }

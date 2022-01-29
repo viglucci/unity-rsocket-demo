@@ -4,13 +4,14 @@ using RSocket.Frame;
 
 namespace RSocket
 {
-    public class RSocketRequester : IRSocket
+    public class RSocketRequester : Deferred, IRSocket
     {
         private readonly IDuplexConnection _connection;
 
         public RSocketRequester(IDuplexConnection connection)
         {
             _connection = connection;
+            _connection.OnClose(Close);
         }
 
         public ICancellable FireAndForget(IPayload payload, ISubscriber responderStream)

@@ -81,21 +81,31 @@ namespace RSocket
 
             Debug.Log("Transport connected...");
 
-            // ConnectionFrameHandler connectionFrameHandler = new ConnectionFrameHandler(connection);
-            // connection.ConnectionInBound(connectionFrameHandler);
-
-            // var streamsHandler = new RSocketStreamHandler();
-            // connection.HandleRequestStream(streamsHandler);
-
-            Debug.Log("Sending SETUP frame...");
-            connection.ConnectionOutbound.Send(_setupAbstractFrame);
-
             KeepAliveSender keepAliveSender = new KeepAliveSender(
                 connection.ConnectionOutbound,
                 _setupAbstractFrame.KeepAlive,
                 _scheduler);
+
+            KeepAliveHandler keepAliveHandler = new KeepAliveHandler(
+                    connection,
+                    _setupAbstractFrame.LifeTime,
+                    _scheduler);
+            
+            IConnectionFrameHandler connectionFrameHandler
+                = new DefaultConnectionFrameHandler(keepAliveHandler);
+
+            connection.OnClose((error) =>
+            {
+                keepAliveSender.Close();
+                keepAliveHandler.Close(); 
+            });
+            
+            connection.ConnectionInBound(connectionFrameHandler);
+            
+            connection.ConnectionOutbound.Send(_setupAbstractFrame);
             
             keepAliveSender.Start();
+            keepAliveHandler.Start();
 
             return new RSocketRequester(connection);
         }

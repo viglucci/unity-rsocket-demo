@@ -23,7 +23,7 @@ namespace RSocket
 
             _onCloseCallbacks.ForEach(onCloseCallback =>
             {
-                onCloseCallback(_exception);
+                onCloseCallback.Invoke(_exception);
             });
         }
 
@@ -31,7 +31,7 @@ namespace RSocket
         {
             if (Done)
             {
-                onCloseCallback(_exception);
+                onCloseCallback.Invoke(_exception);
                 return;
             }
             

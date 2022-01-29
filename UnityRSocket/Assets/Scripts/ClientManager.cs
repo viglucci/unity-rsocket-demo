@@ -30,10 +30,8 @@ public class ClientManager : MonoBehaviour
     {
         IClientTransport transport = new TcpClientTransport(host, port);
         SetupOptions setupOptions = new SetupOptions(
-            // TODO: actually implement keep alive handler in connector...
-            // keepAlive: 30000, // 30 seconds
-            keepAlive: 3000, // 3 seconds
-            lifetime: 600000, // 10 minutes
+            keepAlive: 1_000, // 30 seconds
+            lifetime: 300_000, // 5 minutes
             data: new List<byte>(),
             metadata: new List<byte>()
             // data: new List<byte>(Encoding.ASCII.GetBytes("This could be anything")),
@@ -42,11 +40,8 @@ public class ClientManager : MonoBehaviour
         RSocketConnector connector = new RSocketConnector(
             transport,
             setupOptions,
-            new MonoBehaviorScheduler(this)
-        );
-
-        Exception connectionException = null;
-
+            new MonoBehaviorScheduler());
+        
         try
         {
             _rSocket = await connector.Bind();
@@ -54,11 +49,9 @@ public class ClientManager : MonoBehaviour
         catch (Exception e)
         {
             Debug.LogError(e);
-            connectionException = e;
+            return;
         }
-
-        if (connectionException != null) return;
-
+        
         Debug.Log("RSocket requester bound");
 
         OnRSocketConnected();
@@ -66,6 +59,12 @@ public class ClientManager : MonoBehaviour
 
     private void OnRSocketConnected()
     {
+        _rSocket.OnClose((ex) =>
+        {
+            Debug.Log("RSocket connection closed.");
+            Debug.LogError(ex);
+        });
+        
         // ICancellable cancellable = _rSocket.RequestResponse(new RSocketPayload
         //     {
         //         Data = new List<byte>(Encoding.ASCII.GetBytes("PING"))
@@ -131,10 +130,23 @@ public class ClientManager : MonoBehaviour
         //     100);
     }
 
-    private IEnumerator DoAfterSeconds(float seconds, Action callback)
-    {
-        yield return new WaitForSeconds(seconds);
-
-        callback.Invoke();
-    }
+    // private IEnumerator DoAfterSeconds(float seconds, Action callback)
+    // {
+    //     yield return new WaitForSeconds(seconds);
+    //
+    //     callback.Invoke();
+    // }
+    //
+    // Better example for how to do Coroutine on interval
+    // private IEnumerator DoAndreAfterSeconds(float seconds, Action callback)
+    // {
+    //     int timesCalled = 0;
+    //     
+    //     while (true)
+    //     {
+    //         yield return new WaitForSeconds(seconds);
+    //         callback.Invoke();
+    //         ++timesCalled;
+    //     }
+    // }
 }

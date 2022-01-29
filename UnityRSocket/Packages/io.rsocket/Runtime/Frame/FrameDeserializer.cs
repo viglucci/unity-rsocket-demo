@@ -45,9 +45,27 @@ namespace RSocket.Frame
                     return DeserializePayloadFrame(frameBuffer, streamId.value, flags, offset);
                 case FrameType.ERROR:
                     return DeserializeErrorFrame(frameBuffer, streamId.value, flags, offset);
+                case FrameType.KEEPALIVE:
+                    return DeserializeKeepAliveFrame(frameBuffer, streamId.value, flags, offset);
                 default:
                     throw new NotImplementedException();
             }
+        }
+
+        private static RSocketFrame.AbstractFrame DeserializeKeepAliveFrame(
+            List<byte> frameBuffer,
+            int streamId,
+            int flags,
+            int offset)
+        {
+            (ulong lastReceivedPosition, int nextOffset) = BufferUtils.ReadUInt64BigEndian(frameBuffer, offset);
+            
+            // TODO: read data
+
+            return new RSocketFrame.KeepAliveFrame(streamId)
+            {
+                LastReceivedPosition = lastReceivedPosition
+            };
         }
 
         private static RSocketFrame.AbstractFrame DeserializeErrorFrame(List<byte> frameBuffer, int streamId, int flags,

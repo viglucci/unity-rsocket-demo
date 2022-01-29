@@ -9,6 +9,8 @@ namespace RSocket.Frame
         {
             public override FrameType Type => FrameType.KEEPALIVE;
 
+            public ulong LastReceivedPosition { get; set; }
+
             public override List<byte> Serialize()
             {
                 List<byte> bytes = new List<byte>();

@@ -5,10 +5,12 @@ namespace RSocket
 {
     public interface IScheduler
     {
-        public Coroutine DoAfterSeconds(float seconds, Action callback);
+        public int RunTimeout(float seconds, Action callback);
 
         public int StartInterval(float seconds, Action callback);
 
-        public void ClearInterval(int id);
+        public void Clear(int id);
+
+        public void RunImmediate(Action callback);
     }
 }
