@@ -3,13 +3,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net.Sockets;
 using RSocket.Frame;
-using UnityEngine;
 
 namespace RSocket
 {
     public class TcpDuplexConnection : ClientServerInputMultiplexerDemultiplexer, IDuplexConnection
     {
-        private readonly TcpClient _socket;
         public static int DataBufferSize = 4096;
 
         private readonly NetworkStream _stream;
@@ -20,7 +18,6 @@ namespace RSocket
 
         public TcpDuplexConnection(TcpClient socket) : base(StreamIdGenerator.Create(-1))
         {
-            _socket = socket;
             _receiveBuffer = new byte[DataBufferSize];
             _stream = socket.GetStream();
             _stream.BeginRead(_receiveBuffer, 0, DataBufferSize, OnData, null);
