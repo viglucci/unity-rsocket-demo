@@ -57,7 +57,7 @@ namespace RSocket
     {
     }
 
-    public interface IRSocket
+    public interface IRSocket : ICloseable
     {
         public ICancellable FireAndForget(IPayload payload, [NotNull] ISubscriber responderStream);
 
@@ -89,7 +89,7 @@ namespace RSocket
 
     public interface IDemultiplexer
     {
-        public void ConnectionInBound(Action<RSocketFrame.AbstractFrame> handler);
+        public void ConnectionInBound(IConnectionFrameHandler handler);
 
         public void HandleRequestStream(RSocketStreamHandler handler);
     }
@@ -99,6 +99,13 @@ namespace RSocket
         public void Handle(RSocketFrame.AbstractFrame abstractFrame);
         
         public void Close(Exception error);
+    }
+
+    public interface IConnectionFrameHandler : IFrameHandler
+    {
+        public void Pause();
+
+        public void Resume();
     }
 
     public interface IStreamFrameHandler : IFrameHandler

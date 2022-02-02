@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using RSocket.KeepAlive;
 using UnityEngine;
 
 namespace RSocket
@@ -45,15 +46,18 @@ namespace RSocket
     public class RSocketConnector
     {
         private readonly IClientTransport _clientTransport;
+        private readonly IScheduler _scheduler;
         private readonly Frame.RSocketFrame.SetupFrame _setupAbstractFrame;
 
         public RSocketConnector(
             IClientTransport clientTransport,
-            SetupOptions setupOptions)
+            SetupOptions setupOptions,
+            IScheduler scheduler)
         {
             _clientTransport = clientTransport;
+            _scheduler = scheduler;
 
-            ushort metaDataFlag = (ushort) (setupOptions.Metadata != null
+            ushort metaDataFlag = (ushort)(setupOptions.Metadata != null
                 ? RSocketFlagType.METADATA
                 : RSocketFlagType.NONE);
 
@@ -74,17 +78,34 @@ namespace RSocket
         public async Task<RSocketRequester> Bind()
         {
             IDuplexConnection connection = await _clientTransport.Connect();
-            
+
             Debug.Log("Transport connected...");
 
-            // ConnectionFrameHandler connectionFrameHandler = new ConnectionFrameHandler(connection);
-            // connection.ConnectionInBound(connectionFrameHandler);
-                
-            // var streamsHandler = new RSocketStreamHandler();
-            // connection.HandleRequestStream(streamsHandler);
-                
-            Debug.Log("Sending SETUP frame...");
+            KeepAliveSender keepAliveSender = new KeepAliveSender(
+                connection.ConnectionOutbound,
+                _setupAbstractFrame.KeepAlive,
+                _scheduler);
+
+            KeepAliveHandler keepAliveHandler = new KeepAliveHandler(
+                    connection,
+                    _setupAbstractFrame.LifeTime,
+                    _scheduler);
+            
+            IConnectionFrameHandler connectionFrameHandler
+                = new DefaultConnectionFrameHandler(keepAliveHandler);
+
+            connection.OnClose((error) =>
+            {
+                keepAliveSender.Close();
+                keepAliveHandler.Close(); 
+            });
+            
+            connection.ConnectionInBound(connectionFrameHandler);
+            
             connection.ConnectionOutbound.Send(_setupAbstractFrame);
+            
+            keepAliveSender.Start();
+            keepAliveHandler.Start();
 
             return new RSocketRequester(connection);
         }

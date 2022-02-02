@@ -9,47 +9,52 @@ namespace RSocket
     public abstract class ClientServerInputMultiplexerDemultiplexer : Deferred, IMultiplexer, IStream
     {
         private readonly IStreamIdGenerator _streamIdGenerator;
+        private IConnectionFrameHandler _connectionFramesHandler;
+        private RSocketStreamHandler _streamHandler;
 
         public IOutboundConnection ConnectionOutbound { get; }
 
-        private readonly Dictionary<int, IStreamFrameHandler> _streamFrameHandlers = new Dictionary<int, IStreamFrameHandler>();
-        
-        public ClientServerInputMultiplexerDemultiplexer(IStreamIdGenerator streamIdGenerator)
+        private readonly Dictionary<int, IStreamFrameHandler> _streamFrameHandlers =
+            new Dictionary<int, IStreamFrameHandler>();
+
+        protected ClientServerInputMultiplexerDemultiplexer(IStreamIdGenerator streamIdGenerator)
         {
             _streamIdGenerator = streamIdGenerator;
         }
 
         protected void Handle(RSocketFrame.AbstractFrame abstractFrame)
         {
-            if (abstractFrame.Type == FrameType.RESERVED)
-            {
-                // TODO: throw
-                return;
-            }
-
             if (FrameUtils.IsConnectionFrame(abstractFrame))
             {
-                // TODO: Connection stream handling
-                throw new NotImplementedException();
-            }
+                if (abstractFrame.Type == FrameType.RESERVED)
+                {
+                    // TODO: throw
+                    // TODO: understand why RESERVED frame is invalid here?
+                    return;
+                }
 
-            if (FrameUtils.IsRequestFrame(abstractFrame))
+                _connectionFramesHandler.Handle(abstractFrame);
+            }
+            else if (FrameUtils.IsRequestFrame(abstractFrame))
             {
                 // TODO: Request stream handling
                 throw new NotImplementedException();
             }
-
-            _streamFrameHandlers.TryGetValue(abstractFrame.StreamId, out IStreamFrameHandler handler);
-
-            if (handler == null)
+            else
             {
-                Debug.LogWarning($"Failed to find handler for unknown stream {abstractFrame.StreamId} for frame type ${abstractFrame.Type}.");
-                return;
+                _streamFrameHandlers.TryGetValue(abstractFrame.StreamId, out IStreamFrameHandler handler);
+
+                if (handler == null)
+                {
+                    Debug.LogWarning(
+                        $"Failed to find handler for unknown stream {abstractFrame.StreamId} for frame type ${abstractFrame.Type}.");
+                    return;
+                }
+
+                handler.Handle(abstractFrame);
             }
-            
-            handler.Handle(abstractFrame);
         }
-        
+
         public void CreateRequestStream(IStreamFrameStreamLifecyleHandler streamHandler)
         {
             if (Done)
@@ -64,7 +69,12 @@ namespace RSocket
                 return streamHandler.HandleReady(streamId, this);
             }, _streamFrameHandlers.Keys.ToList());
         }
-        
+
         public abstract void Send(ISerializableFrame<RSocketFrame.AbstractFrame> frame);
+
+        public void ConnectionInBound(IConnectionFrameHandler handler)
+        {
+            _connectionFramesHandler = handler;
+        }
     }
 }
