@@ -1,5 +1,4 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Text;
 using RSocket;
@@ -7,14 +6,20 @@ using UnityEngine;
 
 public class ClientManager : MonoBehaviour
 {
+    /**
+     * How often to send KeepAlive frames.
+     */
+    public int keepAliveInterval = 10_000;
+    
+    /**
+     * The max delay between a keep alive frame and a server ACK. Client will disconnect if server does not
+     * respond to a KeepAlive frame within this time period.
+     */
+    public int keepAliveTimeout = 60_000;
+    
     private static ClientManager _instance;
-
-    [SerializeField] public string host;
-    [SerializeField] public int port;
     private IRSocket _rSocket;
-
     private IClientTransport _transport;
-    private readonly int _wsPort = 7000;
 
     private void Awake()
     {
@@ -36,20 +41,24 @@ public class ClientManager : MonoBehaviour
     {
         Debug.Log("ClientManager Start");
         
-        _transport = new SimpleWebTransportTransport(
-            "ws", "localhost", _wsPort, 5000, 20000, 5000);
-        // _transport = new TcpClientTransport(host, port);
+        IRSocketTransportProvider rSocketTransportProvider = GetRSocketTransportProvider();
+
+        if (rSocketTransportProvider == null)
+            throw new Exception("ClientManager must have a IRSocketTransportProvider component.");
+        
+        Debug.Log($"Resolved transport as {rSocketTransportProvider.Transport.GetType()}");
+
+        _transport = rSocketTransportProvider.Transport;
 
         SetupOptions setupOptions = new SetupOptions(
-            keepAlive: 3000, // 3 seconds
-            // keepAlive: 30_000, // 30 second
-            lifetime: 30_000, // 30 seconds
-            // lifetime: 300_000, // 5 minutes
+            keepAliveInterval, // 3 seconds
+            keepAliveTimeout, // 30 seconds
             data: new List<byte>(),
             metadata: new List<byte>()
             // data: new List<byte>(Encoding.ASCII.GetBytes("This could be anything")),
             // metadata: new List<byte>(Encoding.ASCII.GetBytes("This could also be anything"))
         );
+        
         RSocketConnector connector = new RSocketConnector(
             _transport,
             setupOptions,
@@ -69,12 +78,16 @@ public class ClientManager : MonoBehaviour
         OnRSocketConnected();
     }
 
+    private IRSocketTransportProvider GetRSocketTransportProvider()
+    {
+        return GetComponent<IRSocketTransportProvider>();
+    }
+
     private void Update()
     {
         _transport.ProcessMessages();
     }
 
-    // ReSharper disable Unity.PerformanceAnalysis
     private void OnRSocketConnected()
     {
         _rSocket.OnClose((ex) =>
