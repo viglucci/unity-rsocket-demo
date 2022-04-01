@@ -97,7 +97,7 @@ namespace RSocket
             throw new NotImplementedException();
         }
 
-        public void HandleConnectionError(Exception exception)
+        private void HandleConnectionError(Exception exception)
         {
             Close(new Exception("TCP connection error: " + exception.Message));
         }

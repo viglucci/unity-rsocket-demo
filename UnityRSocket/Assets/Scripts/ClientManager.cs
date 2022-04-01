@@ -1,5 +1,7 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.Text;
 using RSocket;
 using UnityEngine;
 
@@ -10,9 +12,13 @@ public class ClientManager : MonoBehaviour
     [SerializeField] public string host;
     [SerializeField] public int port;
     private IRSocket _rSocket;
+    private SimpleWebTransportTransport _wsTransport;
+    // private IClientTransport _tcpTransport;
 
     private void Awake()
     {
+        Debug.Log("ClientManager Awake");
+        
         if (_instance == null)
         {
             _instance = this;
@@ -25,25 +31,34 @@ public class ClientManager : MonoBehaviour
         }
     }
 
-    private async void Start()
+    private void Start()
     {
-        IClientTransport transport = new TcpClientTransport(host, port);
+        Debug.Log("ClientManager Start");
+        
+        _wsTransport = new SimpleWebTransportTransport(
+            "ws", "localhost", 9090, 5000, 20000, 5000);
+        // _tcpTransport = new TcpClientTransport(host, port);
+        
         SetupOptions setupOptions = new SetupOptions(
-            keepAlive: 30_000, // 30 seconds
-            lifetime: 300_000, // 5 minutes
+            keepAlive: 3000, // 3 seconds
+            // keepAlive: 30_000, // 30 second
+            lifetime: 30_000, // 30 seconds
+            // lifetime: 300_000, // 5 minutes
             data: new List<byte>(),
             metadata: new List<byte>()
             // data: new List<byte>(Encoding.ASCII.GetBytes("This could be anything")),
             // metadata: new List<byte>(Encoding.ASCII.GetBytes("This could also be anything"))
         );
         RSocketConnector connector = new RSocketConnector(
-            transport,
+            _wsTransport,
+            // _tcpTransport,
             setupOptions,
             new MonoBehaviorScheduler());
 
         try
         {
-            _rSocket = await connector.Bind();
+            Debug.Log("ClientManager Connecting");
+            _rSocket = connector.Bind();
         }
         catch (Exception e)
         {
@@ -56,43 +71,39 @@ public class ClientManager : MonoBehaviour
         OnRSocketConnected();
     }
 
+    private void Update()
+    {
+        _wsTransport.ProcessMessageQueue();
+    }
+
     private void OnRSocketConnected()
     {
         _rSocket.OnClose((ex) =>
         {
             Debug.Log("RSocket connection closed.");
-            Debug.LogError(ex);
+            if (ex != null)
+                Debug.LogError(ex);
         });
 
-        // ICancellable cancellable = _rSocket.RequestResponse(new RSocketPayload
-        //     {
-        //         Data = new List<byte>(Encoding.ASCII.GetBytes("PING"))
-        //     },
-        //     new Subscriber(
-        //         (payload, isComplete) =>
-        //         {
-        //             string decodedData = Encoding.UTF8.GetString(payload.Data.ToArray());
-        //             string decodedMetadata = Encoding.UTF8.GetString(payload.Metadata.ToArray());
-        //
-        //             Debug.Log($"[data: {decodedData}, " +
-        //                       $"metadata: {decodedMetadata}, " +
-        //                       $"isComplete: {isComplete}]");
-        //
-        //             if (isComplete)
-        //             {
-        //                 Debug.Log("RequestResponse done");
-        //             }
-        //         },
-        //         () => Debug.Log("RequestResponse done"),
-        //         Debug.LogError
-        //     ));
-        //
-        // StartCoroutine(DoAfterSeconds(1.0f, () =>
-        // {
-        //     Debug.Log("Canceling request response...");
-        //     cancellable.Cancel();
-        // }));
+        ICancellable cancellable = _rSocket.RequestResponse(new RSocketPayload
+            {
+                Data = new List<byte>(Encoding.ASCII.GetBytes("PING"))
+            },
+            new Subscriber(
+                (payload, isComplete) =>
+                {
+                    string decodedData = Encoding.UTF8.GetString(payload.Data.ToArray());
+                    string decodedMetadata = Encoding.UTF8.GetString(payload.Metadata.ToArray());
 
+                    Debug.Log($"data: {decodedData}");
+                    Debug.Log($"metadata: {decodedMetadata}");
+                    Debug.Log($"isComplete: {isComplete}");
+                },
+                () => Debug.Log("RequestResponse done"),
+                (ex) =>
+                {
+                    Debug.LogError(ex);
+                }));
 
         // _rSocket.FireAndForget(new RSocketPayload
         //     {
@@ -129,23 +140,23 @@ public class ClientManager : MonoBehaviour
         //     100);
     }
 
-    // private IEnumerator DoAfterSeconds(float seconds, Action callback)
-    // {
-    //     yield return new WaitForSeconds(seconds);
-    //
-    //     callback.Invoke();
-    // }
-    //
+    private IEnumerator DoAfterSeconds(float seconds, Action callback)
+    {
+        yield return new WaitForSeconds(seconds);
+    
+        callback.Invoke();
+    }
+    
     // Better example for how to do Coroutine on interval
-    // private IEnumerator DoAndreAfterSeconds(float seconds, Action callback)
-    // {
-    //     int timesCalled = 0;
-    //     
-    //     while (true)
-    //     {
-    //         yield return new WaitForSeconds(seconds);
-    //         callback.Invoke();
-    //         ++timesCalled;
-    //     }
-    // }
+    private IEnumerator DoAndreAfterSeconds(float seconds, Action callback)
+    {
+        int timesCalled = 0;
+        
+        while (true)
+        {
+            yield return new WaitForSeconds(seconds);
+            callback.Invoke();
+            ++timesCalled;
+        }
+    }
 }

@@ -75,9 +75,9 @@ namespace RSocket
             };
         }
 
-        public async Task<RSocketRequester> Bind()
+        public RSocketRequester Bind()
         {
-            IDuplexConnection connection = await _clientTransport.Connect();
+            IDuplexConnection connection = _clientTransport.Connect();
 
             Debug.Log("Transport connected...");
 

@@ -73,7 +73,8 @@ namespace RSocket
 
     public interface IClientTransport
     {
-        public Task<IDuplexConnection> Connect();
+        // public abstract Task<IDuplexConnection> Connect();
+        public abstract IDuplexConnection Connect();
     }
 
     public interface IDuplexConnection : ICloseable, IMultiplexer, IDemultiplexer
@@ -91,7 +92,7 @@ namespace RSocket
     {
         public void ConnectionInBound(IConnectionFrameHandler handler);
 
-        public void HandleRequestStream(RSocketStreamHandler handler);
+        public abstract void HandleRequestStream(RSocketStreamHandler handler);
     }
 
     public interface IFrameHandler
@@ -145,7 +146,7 @@ namespace RSocket
 
     public interface ICloseable
     {
-        public void Close(Exception error);
+        public void Close(Exception error = null);
 
         public void OnClose(Action<Exception> error);
     }

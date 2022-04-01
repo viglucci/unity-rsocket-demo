@@ -16,7 +16,7 @@ namespace RSocket
             _port = port;
         }
 
-        public async Task<IDuplexConnection> Connect()
+        public IDuplexConnection Connect()
         {
             _socket = new TcpClient()
             {
@@ -24,10 +24,16 @@ namespace RSocket
                 SendBufferSize = TcpDuplexConnection.DataBufferSize
             };
             
-            IAsyncResult asyncResult = _socket.BeginConnect(_host, _port, (ar) => {}, _socket);
-            await Task.Factory.FromAsync(asyncResult, _socket.EndConnect);
+            // TODO: fix Connect for TCP without requiring connect to be async
+            // IAsyncResult asyncResult = _socket.BeginConnect(_host, _port, (ar) => {}, _socket);
+            // await Task.Factory.FromAsync(asyncResult, _socket.EndConnect);
             
             return new TcpDuplexConnection(_socket);
+        }
+        
+        public IDuplexConnection ConnectSync()
+        {
+            throw new NotImplementedException();
         }
     }
 }
