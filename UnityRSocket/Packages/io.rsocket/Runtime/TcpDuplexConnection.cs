@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Sockets;
+using System.Threading;
 using RSocket.Frame;
 
 namespace RSocket
@@ -10,38 +11,45 @@ namespace RSocket
     {
         public static int DataBufferSize = 4096;
 
-        private readonly NetworkStream _stream;
         private readonly byte[] _receiveBuffer;
         private List<byte> _remainingBuffer = new List<byte>();
+        private Thread _receiveThread;
+        private readonly TcpClient _socket;
 
         public new IOutboundConnection ConnectionOutbound => this;
 
         public TcpDuplexConnection(TcpClient socket) : base(StreamIdGenerator.Create(-1))
         {
             _receiveBuffer = new byte[DataBufferSize];
-            _stream = socket.GetStream();
-            _stream.BeginRead(_receiveBuffer, 0, DataBufferSize, OnData, null);
+            _socket = socket;
+        }
+        
+        public void Listen()
+        {
+            _receiveThread = new Thread(ListenForData)
+            {
+                IsBackground = true
+            };
+            _receiveThread.Start();
+        }
+        
+        public new void Close(Exception e)
+        {
+            _receiveThread.Abort();
+            base.Close(e);
         }
 
-        private void OnData(IAsyncResult ar)
+        private void ListenForData()
         {
-            try
+            while (true)
             {
-                int byteLength = _stream.EndRead(ar);
-                if (byteLength <= 0)
-                {
-                    return;
+                using NetworkStream stream = _socket.GetStream();
+                int length; 									
+                while ((length = stream.Read(_receiveBuffer, 0, DataBufferSize)) != 0) { 						
+                    byte[] received = new byte[length]; 						
+                    Array.Copy(_receiveBuffer, 0, received, 0, length); 						
+                    HandleData(received);
                 }
-
-                byte[] data = new byte[byteLength];
-                Array.Copy(_receiveBuffer, data, byteLength);
-                HandleData(data);
-
-                _stream.BeginRead(_receiveBuffer, 0, DataBufferSize, OnData, null);
-            }
-            catch (Exception ex)
-            {
-                Close(ex);
             }
         }
 
@@ -72,19 +80,10 @@ namespace RSocket
         {
             try
             {
-                void AsyncCallback(IAsyncResult ar)
-                {
-                    try
-                    {
-                        _stream.EndWrite(ar);
-                    }
-                    catch (Exception ex)
-                    {
-                        HandleConnectionError(ex);
-                    }
+                NetworkStream stream = _socket.GetStream(); 			
+                if (stream.CanWrite) {
+                    stream.Write(bytes.ToArray(), 0, bytes.Count);                        
                 }
-
-                _stream.BeginWrite(bytes.ToArray(), 0, bytes.Count, AsyncCallback, null);
             }
             catch (Exception ex)
             {
@@ -97,7 +96,7 @@ namespace RSocket
             throw new NotImplementedException();
         }
 
-        public void HandleConnectionError(Exception exception)
+        private void HandleConnectionError(Exception exception)
         {
             Close(new Exception("TCP connection error: " + exception.Message));
         }

@@ -1,6 +1,5 @@
 using System;
 using System.Net.Sockets;
-using System.Threading.Tasks;
 
 namespace RSocket
 {
@@ -16,18 +15,30 @@ namespace RSocket
             _port = port;
         }
 
-        public async Task<IDuplexConnection> Connect()
+        public IDuplexConnection Connect()
         {
-            _socket = new TcpClient()
+            _socket = new TcpClient(_host, _port)
             {
                 ReceiveBufferSize = TcpDuplexConnection.DataBufferSize,
                 SendBufferSize = TcpDuplexConnection.DataBufferSize
             };
+
+            TcpDuplexConnection tcpDuplexConnection
+                = new TcpDuplexConnection(_socket);
+
+            tcpDuplexConnection.Listen();
             
-            IAsyncResult asyncResult = _socket.BeginConnect(_host, _port, (ar) => {}, _socket);
-            await Task.Factory.FromAsync(asyncResult, _socket.EndConnect);
-            
-            return new TcpDuplexConnection(_socket);
+            return tcpDuplexConnection;
+        }
+
+        public void ProcessMessages()
+        {
+            // noop
+        }
+
+        public IDuplexConnection ConnectSync()
+        {
+            throw new NotImplementedException();
         }
     }
 }
