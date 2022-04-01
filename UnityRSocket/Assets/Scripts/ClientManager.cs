@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
+using System.Text;
 using RSocket;
+using RSocket.CompositeMetadata;
 using UnityEngine;
 
 public class ClientManager : MonoBehaviour
@@ -64,28 +66,37 @@ public class ClientManager : MonoBehaviour
             Debug.LogError(ex);
         });
 
-        // ICancellable cancellable = _rSocket.RequestResponse(new RSocketPayload
-        //     {
-        //         Data = new List<byte>(Encoding.ASCII.GetBytes("PING"))
-        //     },
-        //     new Subscriber(
-        //         (payload, isComplete) =>
-        //         {
-        //             string decodedData = Encoding.UTF8.GetString(payload.Data.ToArray());
-        //             string decodedMetadata = Encoding.UTF8.GetString(payload.Metadata.ToArray());
-        //
-        //             Debug.Log($"[data: {decodedData}, " +
-        //                       $"metadata: {decodedMetadata}, " +
-        //                       $"isComplete: {isComplete}]");
-        //
-        //             if (isComplete)
-        //             {
-        //                 Debug.Log("RequestResponse done");
-        //             }
-        //         },
-        //         () => Debug.Log("RequestResponse done"),
-        //         Debug.LogError
-        //     ));
+        Dictionary<string, List<byte>> metaMap = new Dictionary<string, List<byte>>(){
+        {
+            Metadata.WellKnownMimeTypeToString(WellKnownMimeType.MESSAGE_RSOCKET_ROUTING), new List<byte>()
+        }};
+
+        List<byte> data = new List<byte>(Encoding.ASCII.GetBytes("PING"));
+        List<byte> metaData = new List<byte>(Encoding.ASCII.GetBytes("PING"));
+
+        ICancellable cancellable = _rSocket.RequestResponse(new RSocketPayload
+            {
+                Data = data,
+                Metadata = metaData
+            },
+            new Subscriber(
+                (payload, isComplete) =>
+                {
+                    string decodedData = Encoding.UTF8.GetString(payload.Data.ToArray());
+                    string decodedMetadata = Encoding.UTF8.GetString(payload.Metadata.ToArray());
+        
+                    Debug.Log($"[data: {decodedData}, " +
+                              $"metadata: {decodedMetadata}, " +
+                              $"isComplete: {isComplete}]");
+        
+                    if (isComplete)
+                    {
+                        Debug.Log("RequestResponse done");
+                    }
+                },
+                () => Debug.Log("RequestResponse done"),
+                Debug.LogError
+            ));
         //
         // StartCoroutine(DoAfterSeconds(1.0f, () =>
         // {
