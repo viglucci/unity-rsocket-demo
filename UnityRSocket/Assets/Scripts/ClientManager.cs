@@ -12,13 +12,14 @@ public class ClientManager : MonoBehaviour
     [SerializeField] public string host;
     [SerializeField] public int port;
     private IRSocket _rSocket;
-    private SimpleWebTransportTransport _wsTransport;
-    // private IClientTransport _tcpTransport;
+
+    private IClientTransport _transport;
+    private readonly int _wsPort = 7000;
 
     private void Awake()
     {
         Debug.Log("ClientManager Awake");
-        
+
         if (_instance == null)
         {
             _instance = this;
@@ -35,10 +36,10 @@ public class ClientManager : MonoBehaviour
     {
         Debug.Log("ClientManager Start");
         
-        _wsTransport = new SimpleWebTransportTransport(
-            "ws", "localhost", 9090, 5000, 20000, 5000);
-        // _tcpTransport = new TcpClientTransport(host, port);
-        
+        _transport = new SimpleWebTransportTransport(
+            "ws", "localhost", _wsPort, 5000, 20000, 5000);
+        // _transport = new TcpClientTransport(host, port);
+
         SetupOptions setupOptions = new SetupOptions(
             keepAlive: 3000, // 3 seconds
             // keepAlive: 30_000, // 30 second
@@ -50,14 +51,13 @@ public class ClientManager : MonoBehaviour
             // metadata: new List<byte>(Encoding.ASCII.GetBytes("This could also be anything"))
         );
         RSocketConnector connector = new RSocketConnector(
-            _wsTransport,
-            // _tcpTransport,
+            _transport,
             setupOptions,
             new MonoBehaviorScheduler());
 
         try
         {
-            Debug.Log("ClientManager Connecting");
+            Debug.Log("ClientManager binding connector");
             _rSocket = connector.Bind();
         }
         catch (Exception e)
@@ -66,16 +66,15 @@ public class ClientManager : MonoBehaviour
             return;
         }
 
-        Debug.Log("RSocket requester bound");
-
         OnRSocketConnected();
     }
 
     private void Update()
     {
-        _wsTransport.ProcessMessageQueue();
+        _transport.ProcessMessages();
     }
 
+    // ReSharper disable Unity.PerformanceAnalysis
     private void OnRSocketConnected()
     {
         _rSocket.OnClose((ex) =>
@@ -100,10 +99,8 @@ public class ClientManager : MonoBehaviour
                     Debug.Log($"isComplete: {isComplete}");
                 },
                 () => Debug.Log("RequestResponse done"),
-                (ex) =>
-                {
-                    Debug.LogError(ex);
-                }));
+                (ex) => Debug.LogError(ex)
+            ));
 
         // _rSocket.FireAndForget(new RSocketPayload
         //     {
@@ -140,23 +137,23 @@ public class ClientManager : MonoBehaviour
         //     100);
     }
 
-    private IEnumerator DoAfterSeconds(float seconds, Action callback)
-    {
-        yield return new WaitForSeconds(seconds);
-    
-        callback.Invoke();
-    }
-    
-    // Better example for how to do Coroutine on interval
-    private IEnumerator DoAndreAfterSeconds(float seconds, Action callback)
-    {
-        int timesCalled = 0;
-        
-        while (true)
-        {
-            yield return new WaitForSeconds(seconds);
-            callback.Invoke();
-            ++timesCalled;
-        }
-    }
+    // private IEnumerator DoAfterSeconds(float seconds, Action callback)
+    // {
+    //     yield return new WaitForSeconds(seconds);
+    //
+    //     callback.Invoke();
+    // }
+    //
+    // // Better example for how to do Coroutine on interval
+    // private IEnumerator DoAndreAfterSeconds(float seconds, Action callback)
+    // {
+    //     int timesCalled = 0;
+    //
+    //     while (true)
+    //     {
+    //         yield return new WaitForSeconds(seconds);
+    //         callback.Invoke();
+    //         ++timesCalled;
+    //     }
+    // }
 }

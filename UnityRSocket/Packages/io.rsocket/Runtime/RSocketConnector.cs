@@ -79,8 +79,6 @@ namespace RSocket
         {
             IDuplexConnection connection = _clientTransport.Connect();
 
-            Debug.Log("Transport connected...");
-
             KeepAliveSender keepAliveSender = new KeepAliveSender(
                 connection.ConnectionOutbound,
                 _setupAbstractFrame.KeepAlive,

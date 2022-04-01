@@ -75,6 +75,8 @@ namespace RSocket
     {
         // public abstract Task<IDuplexConnection> Connect();
         public abstract IDuplexConnection Connect();
+
+        public abstract void ProcessMessages();
     }
 
     public interface IDuplexConnection : ICloseable, IMultiplexer, IDemultiplexer

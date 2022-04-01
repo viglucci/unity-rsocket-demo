@@ -52,7 +52,7 @@ namespace RSocket
             return connection;
         }
 
-        public void ProcessMessageQueue()
+        public void ProcessMessages()
         {
             _client.ProcessMessageQueue();
         }
