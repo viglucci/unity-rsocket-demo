@@ -16,7 +16,7 @@ namespace RSocket.Frame
             protected void WritePayload(List<byte> bytes)
             {
                 // Check if Metadata flag is set
-                if ((Flags & (int) RSocketFlagType.METADATA) == (int) RSocketFlagType.METADATA)
+                if (FrameUtils.HasMetadataFlag(Flags))
                 {
                     // Write metadata with length prefix if we have metadata
                     if (Metadata != null)

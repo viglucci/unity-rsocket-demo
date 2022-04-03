@@ -3,15 +3,18 @@ using UnityEngine;
 
 public class TcpTransportProvider : MonoBehaviour, IRSocketTransportProvider
 {
-    
     [SerializeField] public string host = "localhost";
     [SerializeField] public int port = 9091;
-
-    public IClientTransport Transport { get; private set; }
+    private TcpClientTransport _transport;
 
     // Start is called before the first frame update
-    void Start()
+    void Awake()
     {
-        Transport = new TcpClientTransport(host, port);
+        _transport = new TcpClientTransport(host, port);
+    }
+
+    public IClientTransport GetTransport()
+    {
+        return _transport;
     }
 }

@@ -6,9 +6,9 @@ namespace RSocket
 {
     public class Deferred : ICloseable
     {
-        public bool Done { get; private set; }
-        private Exception _exception;
         private readonly List<Action<Exception>> _onCloseCallbacks = new List<Action<Exception>>();
+        private Exception _exception;
+        protected bool Done { get; private set; }
 
         public void Close(Exception exception = null)
         {
@@ -21,10 +21,7 @@ namespace RSocket
             Done = true;
             _exception = exception;
 
-            _onCloseCallbacks.ForEach(onCloseCallback =>
-            {
-                onCloseCallback.Invoke(_exception);
-            });
+            _onCloseCallbacks.ForEach(onCloseCallback => { onCloseCallback.Invoke(_exception); });
         }
 
         public void OnClose(Action<Exception> onCloseCallback)
@@ -34,7 +31,7 @@ namespace RSocket
                 onCloseCallback.Invoke(_exception);
                 return;
             }
-            
+
             _onCloseCallbacks.Add(onCloseCallback);
         }
     }

@@ -1,29 +1,32 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using DTO;
 using RSocket;
+using RSocket.CompositeMetadata;
 using UnityEngine;
 
 public class ClientManager : MonoBehaviour
 {
+    private static ClientManager _instance;
+
     /**
      * How often to send KeepAlive frames.
      */
     public int keepAliveInterval = 10_000;
-    
+
     /**
      * The max delay between a keep alive frame and a server ACK. Client will disconnect if server does not
      * respond to a KeepAlive frame within this time period.
      */
     public int keepAliveTimeout = 60_000;
-    
-    private static ClientManager _instance;
+
     private IRSocket _rSocket;
     private IClientTransport _transport;
 
     private void Awake()
     {
-        Debug.Log("ClientManager Awake");
+        Debug.Log("Awake");
 
         if (_instance == null)
         {
@@ -39,26 +42,32 @@ public class ClientManager : MonoBehaviour
 
     private void Start()
     {
-        Debug.Log("ClientManager Start");
-        
+        Debug.Log("Start");
+
         IRSocketTransportProvider rSocketTransportProvider = GetRSocketTransportProvider();
 
-        if (rSocketTransportProvider == null)
-            throw new Exception("ClientManager must have a IRSocketTransportProvider component.");
-        
-        Debug.Log($"Resolved transport as {rSocketTransportProvider.Transport.GetType()}");
+        if (rSocketTransportProvider?.GetTransport() == null)
+        {
+            throw new Exception(
+                "ClientManager must have a IRSocketTransportProvider component. " +
+                "Did you forget to add and enable a IRSocketTransportProvider component?");
+        }
 
-        _transport = rSocketTransportProvider.Transport;
+        _transport = rSocketTransportProvider.GetTransport();
+
+        Debug.Log($"Resolved transport as {_transport.GetType()}");
 
         SetupOptions setupOptions = new SetupOptions(
             keepAliveInterval, // 3 seconds
             keepAliveTimeout, // 30 seconds
             data: new List<byte>(),
-            metadata: new List<byte>()
-            // data: new List<byte>(Encoding.ASCII.GetBytes("This could be anything")),
-            // metadata: new List<byte>(Encoding.ASCII.GetBytes("This could also be anything"))
+            metadata: new List<byte>(),
+            dataMimeType:
+            Metadata.WellKnownMimeTypeToString(WellKnownMimeType.APPLICATION_JSON),
+            metadataMimeType:
+            Metadata.WellKnownMimeTypeToString(WellKnownMimeType.MESSAGE_RSOCKET_COMPOSITE_METADATA)
         );
-        
+
         RSocketConnector connector = new RSocketConnector(
             _transport,
             setupOptions,
@@ -66,7 +75,7 @@ public class ClientManager : MonoBehaviour
 
         try
         {
-            Debug.Log("ClientManager binding connector");
+            Debug.Log("Binding connector");
             _rSocket = connector.Bind();
         }
         catch (Exception e)
@@ -78,14 +87,14 @@ public class ClientManager : MonoBehaviour
         OnRSocketConnected();
     }
 
-    private IRSocketTransportProvider GetRSocketTransportProvider()
-    {
-        return GetComponent<IRSocketTransportProvider>();
-    }
-
     private void Update()
     {
         _transport.ProcessMessages();
+    }
+
+    private IRSocketTransportProvider GetRSocketTransportProvider()
+    {
+        return GetComponent<IRSocketTransportProvider>();
     }
 
     private void OnRSocketConnected()
@@ -97,9 +106,22 @@ public class ClientManager : MonoBehaviour
                 Debug.LogError(ex);
         });
 
+        CreateGameRequest createGameRequest = new CreateGameRequest()
+        {
+            username = "player1"
+        };
+        string json = JsonUtility.ToJson(createGameRequest);
+        List<byte> data = new List<byte>(Encoding.UTF8.GetBytes(json));
+        List<byte> metadata = new CompositeMetadataBuilder()
+            .WellKnown(
+                WellKnownMimeType.MESSAGE_RSOCKET_ROUTING,
+                Routing.EncodeRoute("create-game"))
+            .Build();
+
         ICancellable cancellable = _rSocket.RequestResponse(new RSocketPayload
             {
-                Data = new List<byte>(Encoding.ASCII.GetBytes("PING"))
+                Data = data,
+                Metadata = metadata
             },
             new Subscriber(
                 (payload, isComplete) =>
@@ -110,14 +132,20 @@ public class ClientManager : MonoBehaviour
                     Debug.Log($"data: {decodedData}");
                     Debug.Log($"metadata: {decodedMetadata}");
                     Debug.Log($"isComplete: {isComplete}");
+
+                    if (isComplete)
+                    {
+                        Debug.Log("RequestResponse done");
+                    }
                 },
                 () => Debug.Log("RequestResponse done"),
-                (ex) => Debug.LogError(ex)
+                Debug.LogError
             ));
+
 
         // _rSocket.FireAndForget(new RSocketPayload
         //     {
-        //         Data = new List<byte>(Encoding.ASCII.GetBytes("PING"))
+        //         Data = new List<byte>(Encoding.UTF8.GetBytes("PING"))
         //     },
         //     new Subscriber(
         //         (payload, isComplete) => throw new NotImplementedException(),
@@ -127,7 +155,7 @@ public class ClientManager : MonoBehaviour
 
         // _rSocket.RequestStream(new RSocketPayload
         //     {
-        //         Data = new List<byte>(Encoding.ASCII.GetBytes("PING"))
+        //         Data = new List<byte>(Encoding.UTF8.GetBytes("PING"))
         //     },
         //     new Subscriber(
         //         (payload, isComplete) =>

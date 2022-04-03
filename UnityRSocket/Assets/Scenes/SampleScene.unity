@@ -133,7 +133,7 @@ GameObject:
   m_Component:
   - component: {fileID: 607405241}
   - component: {fileID: 607405240}
-  - component: {fileID: 607405243}
+  - component: {fileID: 607405242}
   m_Layer: 0
   m_Name: RSocketClientManager
   m_TagString: Untagged
@@ -153,7 +153,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8955ba36888b4b88b1dde996c8758d15, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  keepAlive: 10000
+  keepAliveInterval: 10000
   keepAliveTimeout: 60000
 --- !u!4 &607405241
 Transform:
@@ -169,7 +169,7 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 2
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &607405243
+--- !u!114 &607405242
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -183,7 +183,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   scheme: ws
   localhost: localhost
-  port: 7000
+  port: 9090
   sendTimeout: 5000
   receiveTimeout: 20000
   messagesPerTick: 5000
