@@ -1,4 +1,4 @@
-# unity-rsocket
+# unity-rsocket-demo
 
 > 🚨 This project is a work in progress, and not yet available on Unity Hub.
 
