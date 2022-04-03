@@ -13,8 +13,9 @@
 - ❌ WebSocket Client Transport
 - ❌ Leasing
 - ❌ Resumability
-- ❌ Composite Metadata
-- ❌ Keepalive
+- ✔️ Keepalive
+- 🟨 Composite Metadata (wip)
+- ✔️ Routing
 
 ### Request Models
 
