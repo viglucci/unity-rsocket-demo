@@ -9,7 +9,6 @@ namespace RSocket
     public class SimpleWebTransportDuplexConnection : ClientServerInputMultiplexerDemultiplexer, IDuplexConnection
     {
         private readonly SimpleWebClient _client;
-        public new IOutboundConnection ConnectionOutbound => this;
 
         public SimpleWebTransportDuplexConnection(SimpleWebClient _client) : base(StreamIdGenerator.Create(-1))
         {
@@ -19,10 +18,24 @@ namespace RSocket
             this._client.onDisconnect += HandleClosed;
         }
 
+        public new IOutboundConnection ConnectionOutbound => this;
+
+        public void HandleRequestStream(RSocketStreamHandler handler)
+        {
+            throw new NotImplementedException();
+        }
+
+        public new void Close(Exception e = null)
+        {
+            _client.Disconnect();
+            base.Close(e);
+        }
+
         private void HandleData(ArraySegment<byte> segment)
         {
             List<byte> bytes = (segment.Array ?? throw new InvalidOperationException()).ToList();
-            RSocketFrame.AbstractFrame frame = FrameDeserializer.DeserializeFrame(bytes);
+            RSocketFrame.AbstractFrame frame
+                = FrameDeserializer.DeserializeFrame(bytes.GetRange(segment.Offset, segment.Count));
             Handle(frame);
         }
 
@@ -53,18 +66,7 @@ namespace RSocket
 
         private void HandleConnectionError(Exception exception)
         {
-            Close(new Exception("TCP connection error: " + exception.Message));
-        }
-
-        public void HandleRequestStream(RSocketStreamHandler handler)
-        {
-            throw new NotImplementedException();
-        }
-
-        public new void Close(Exception e = null)
-        {
-            _client.Disconnect();
-            base.Close(e);
+            Close(new Exception("WebSocket connection error: " + exception.Message));
         }
     }
 }
