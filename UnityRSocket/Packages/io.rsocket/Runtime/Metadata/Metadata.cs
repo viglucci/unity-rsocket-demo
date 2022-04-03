@@ -14,6 +14,7 @@ namespace RSocket.CompositeMetadata
                 { WellKnownMimeType.APPLICATION_GRAPHQL, "application/graphql" },
                 { WellKnownMimeType.APPLICATION_GZIP, "application/gzip" },
                 { WellKnownMimeType.APPLICATION_JAVASCRIPT, "application/javascript" },
+                { WellKnownMimeType.APPLICATION_JSON, "application/json" },
                 { WellKnownMimeType.APPLICATION_OCTET_STREAM, "application/octet-stream" },
                 { WellKnownMimeType.APPLICATION_THRIFT, "application/vnd.apache.thrift.binary" },
                 { WellKnownMimeType.APPLICATION_PROTOBUF, "application/vnd.google.protobuf" },
