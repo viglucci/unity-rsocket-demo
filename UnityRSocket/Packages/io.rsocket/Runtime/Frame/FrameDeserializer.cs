@@ -30,7 +30,7 @@ namespace RSocket.Frame
             }
         }
 
-        private static RSocketFrame.AbstractFrame DeserializeFrame(List<byte> frameBuffer)
+        public static RSocketFrame.AbstractFrame DeserializeFrame(List<byte> frameBuffer)
         {
             int offset = 0;
             (int value, int nextOffset) streamId = BufferUtils.ReadUInt32BigEndian(frameBuffer, offset);

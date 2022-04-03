@@ -45,7 +45,7 @@ public class ClientManager : MonoBehaviour
 
         try
         {
-            _rSocket = await connector.Bind();
+            _rSocket = connector.Bind();
         }
         catch (Exception e)
         {

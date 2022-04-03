@@ -133,8 +133,9 @@ GameObject:
   m_Component:
   - component: {fileID: 607405241}
   - component: {fileID: 607405240}
+  - component: {fileID: 607405243}
   m_Layer: 0
-  m_Name: ClientManager
+  m_Name: RSocketClientManager
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -152,8 +153,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8955ba36888b4b88b1dde996c8758d15, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  host: 127.0.0.1
-  port: 9091
+  keepAlive: 10000
+  keepAliveTimeout: 60000
 --- !u!4 &607405241
 Transform:
   m_ObjectHideFlags: 0
@@ -168,6 +169,24 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 2
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &607405243
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 607405239}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6f58492835e79404cb585c12437adc60, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  scheme: ws
+  localhost: localhost
+  port: 7000
+  sendTimeout: 5000
+  receiveTimeout: 20000
+  messagesPerTick: 5000
 --- !u!1 &705507993
 GameObject:
   m_ObjectHideFlags: 0
