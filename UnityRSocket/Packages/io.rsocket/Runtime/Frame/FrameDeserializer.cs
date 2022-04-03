@@ -1,11 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-using UnityEngine;
 
 namespace RSocket.Frame
 {
-    public class FrameDeserializer
+    public static class FrameDeserializer
     {
         private const int Uint24Size = 3;
 
@@ -33,38 +32,42 @@ namespace RSocket.Frame
         public static RSocketFrame.AbstractFrame DeserializeFrame(List<byte> frameBuffer)
         {
             int offset = 0;
+            
             (int value, int nextOffset) streamId = BufferUtils.ReadUInt32BigEndian(frameBuffer, offset);
             offset = streamId.nextOffset;
+            
             (int value, int nextOffset) typeAndFlags = BufferUtils.ReadUint16BigEndian(frameBuffer, offset);
+            
+            // keep highest 6 bits
             int type = (int)((uint)typeAndFlags.value >> RSocketFlagUtils.FrameTypeOffset);
+            
+            // keep lowest 10 bits
             int flags = typeAndFlags.value & RSocketFlagUtils.FlagsMask;
+            
             offset = typeAndFlags.nextOffset;
-            switch ((FrameType)type)
+            
+            return (FrameType)type switch
             {
-                case FrameType.PAYLOAD:
-                    return DeserializePayloadFrame(frameBuffer, streamId.value, flags, offset);
-                case FrameType.ERROR:
-                    return DeserializeErrorFrame(frameBuffer, streamId.value, flags, offset);
-                case FrameType.KEEPALIVE:
-                    return DeserializeKeepAliveFrame(frameBuffer, streamId.value, flags, offset);
-                default:
-                    throw new NotImplementedException();
-            }
+                FrameType.PAYLOAD => DeserializePayloadFrame(frameBuffer, streamId.value, flags, offset),
+                FrameType.ERROR => DeserializeErrorFrame(frameBuffer, streamId.value, flags, offset),
+                FrameType.KEEPALIVE => DeserializeKeepAliveFrame(frameBuffer, streamId.value, flags, offset),
+                _ => throw new NotImplementedException()
+            };
         }
 
         private static RSocketFrame.AbstractFrame DeserializeKeepAliveFrame(
             List<byte> frameBuffer,
             int streamId,
-            int flags,
+            int _,
             int offset)
         {
-            (ulong lastReceivedPosition, int nextOffset) = BufferUtils.ReadUInt64BigEndian(frameBuffer, offset);
-            
-            // TODO: read data
+            (ulong value, int nextOffset) lastReceivedPosition = BufferUtils.ReadUInt64BigEndian(frameBuffer, offset);
+
+            // TODO: Per spec KeepAlive frame can contain data. Read data and set on Frame.
 
             return new RSocketFrame.KeepAliveFrame(streamId)
             {
-                LastReceivedPosition = lastReceivedPosition
+                LastReceivedPosition = lastReceivedPosition.value
             };
         }
 
@@ -90,10 +93,22 @@ namespace RSocket.Frame
             int flags,
             int offset)
         {
-            List<byte> metadata = new List<byte>();
-            List<byte> data = new List<byte>();
+            RSocketFrame.PayloadFrame frame = new RSocketFrame.PayloadFrame(streamId)
+            {
+                Flags = (ushort)flags
+            };
+            
+            ReadPayload(frameBuffer, frame, offset);
+            
+            return frame;
+        }
 
-            if (RSocketFlagUtils.HasMetadata(flags))
+        private static void ReadPayload(List<byte> frameBuffer, RSocketFrame.AbstractRequestFrame frame, int offset)
+        {
+            frame.Metadata = new List<byte>();
+            frame.Data = new List<byte>();
+            
+            if (RSocketFlagUtils.HasMetadata(frame.Flags))
             {
                 (int value, int nextOffset) metadataLength
                     = BufferUtils.ReadUInt24BigEndian(frameBuffer, offset);
@@ -102,26 +117,20 @@ namespace RSocket.Frame
 
                 if (metadataLength.value > 0)
                 {
-                    metadata = frameBuffer.GetRange(
+                    frame.Metadata.AddRange(frameBuffer.GetRange(
                         offset,
-                        offset + metadataLength.value);
+                        offset + metadataLength.value));
                     offset += metadataLength.value;
                 }
             }
 
             if (offset < frameBuffer.Count)
             {
-                data = frameBuffer.GetRange(
+                List<byte> data = frameBuffer.GetRange(
                     offset,
                     frameBuffer.Count - offset);
+                frame.Data.AddRange(data);
             }
-
-            return new RSocketFrame.PayloadFrame(streamId)
-            {
-                Flags = (ushort)flags,
-                Metadata = metadata,
-                Data = data
-            };
         }
     }
 }
