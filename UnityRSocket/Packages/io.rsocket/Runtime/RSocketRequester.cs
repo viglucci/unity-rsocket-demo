@@ -80,11 +80,18 @@ namespace RSocket
             StreamId = streamId;
             _stream = stream;
 
-            stream.Send(new RSocketFrame.RequestResponseFrame(streamId)
+            ushort metaDataFlag = (ushort)(_payload.Metadata != null
+                ? RSocketFlagType.METADATA
+                : RSocketFlagType.NONE);
+            
+            RSocketFrame.RequestResponseFrame frame = new RSocketFrame.RequestResponseFrame(streamId)
             {
                 Data = _payload.Data,
-                Metadata = _payload.Metadata
-            });
+                Metadata = _payload.Metadata,
+                Flags = metaDataFlag
+            };
+
+            stream.Send(frame);
 
             return true;
         }
