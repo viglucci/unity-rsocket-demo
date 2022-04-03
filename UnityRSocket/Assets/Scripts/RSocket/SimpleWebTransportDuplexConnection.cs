@@ -66,7 +66,7 @@ namespace RSocket
 
         private void HandleConnectionError(Exception exception)
         {
-            Close(new Exception("TCP connection error: " + exception.Message));
+            Close(new Exception("WebSocket connection error: " + exception.Message));
         }
     }
 }
